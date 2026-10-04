@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Sync with `delete` enabled now lists what it is about to delete and asks for confirmation before removing anything, and removes files only after the whole folder has been scanned. Cancelling now also stops the scan of a big folder, and the progress notification covers the scan (shown after one second) as well as the transfer.
 * Connecting to an FTP server without `secure` set now shows a warning, once per server per session, that the password and files travel unencrypted.
 * Downloads and syncs from a server can no longer overwrite the local `.vscode/sftp.json`, which uploads already skipped. A compromised server could otherwise change the connection settings, including `sshCustomParams`.
 * The extension no longer runs in untrusted workspaces. A cloned repository can supply its own `.vscode/sftp.json`, so connecting to its server, upload on save, and `sshCustomParams` now wait until you trust the workspace.

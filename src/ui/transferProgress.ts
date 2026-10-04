@@ -3,14 +3,36 @@ import { COMMAND_CANCEL_ALL_TRANSFER } from '../constants';
 
 // Single-file saves should stay quiet; only larger batches get a notification.
 const MIN_TASKS_FOR_NOTIFICATION = 5;
+// Walking a big folder to collect the files can take a while before any batch starts.
+const SCAN_NOTIFICATION_DELAY_MS = 1000;
 
 class TransferProgress {
   private total = 0;
   private done = 0;
+  private operations = 0;
   private activeBatches = 0;
   private current = '';
+  private scanTimer: ReturnType<typeof setTimeout> | null = null;
   private finish: (() => void) | null = null;
   private report: ((value: { message?: string; increment?: number }) => void) | null = null;
+
+  // A whole transfer or sync operation: collecting the files, then transferring them.
+  begin() {
+    this.operations++;
+    if (!this.finish && !this.scanTimer) {
+      this.scanTimer = setTimeout(() => {
+        this.scanTimer = null;
+        if (this.operations > 0) {
+          this.open();
+        }
+      }, SCAN_NOTIFICATION_DELAY_MS);
+    }
+  }
+
+  end() {
+    this.operations = Math.max(0, this.operations - 1);
+    this.closeIfIdle();
+  }
 
   batchStart(taskCount: number) {
     this.activeBatches++;
@@ -23,9 +45,7 @@ class TransferProgress {
 
   batchEnd() {
     this.activeBatches = Math.max(0, this.activeBatches - 1);
-    if (this.activeBatches === 0) {
-      this.close();
-    }
+    this.closeIfIdle();
   }
 
   taskStart(name: string) {
@@ -42,9 +62,10 @@ class TransferProgress {
     if (!this.report) {
       return;
     }
+    const counts = this.total ? `${this.done} / ${this.total}` : 'Scanning files…';
     this.report({
       increment,
-      message: `${this.done} / ${this.total}${this.current ? ' · ' + this.current : ''}`,
+      message: this.current && this.total ? `${counts} · ${this.current}` : counts,
     });
   }
 
@@ -62,11 +83,19 @@ class TransferProgress {
           token.onCancellationRequested(() => {
             vscode.commands.executeCommand(COMMAND_CANCEL_ALL_TRANSFER);
           });
+          this.update(0);
         })
     );
   }
 
-  private close() {
+  private closeIfIdle() {
+    if (this.operations > 0 || this.activeBatches > 0) {
+      return;
+    }
+    if (this.scanTimer) {
+      clearTimeout(this.scanTimer);
+      this.scanTimer = null;
+    }
     const finish = this.finish;
     this.finish = null;
     this.report = null;

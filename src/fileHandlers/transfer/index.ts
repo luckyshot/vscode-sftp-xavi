@@ -1,4 +1,6 @@
 import { refreshRemoteExplorer } from '../shared';
+import { showModalConfirm } from '../../host';
+import transferProgress from '../../ui/transferProgress';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
 
@@ -31,9 +33,39 @@ function createTransferHandle(direction: TransferDirection) {
         transferDirection: TransferDirection.LOCAL_TO_REMOTE,
       };
     }
-    // todo: abort at here. we should stop collect task
-    await transfer(transferConfig, t => scheduler.add(t));
+    await collectAndRun(scheduler, async () => {
+      await transfer({ ...transferConfig, isCancelled: () => scheduler.stopped }, t => scheduler.add(t));
+    });
+  };
+}
+
+// Collecting tasks walks the whole tree, which can take long for a big folder, so the
+// progress notification covers it too and cancelling stops the walk.
+async function collectAndRun(
+  scheduler: { run(): Promise<void> },
+  collect: () => Promise<void>
+) {
+  transferProgress.begin();
+  try {
+    await collect();
     await scheduler.run();
+  } finally {
+    transferProgress.end();
+  }
+}
+
+// Sync removes files from the destination before anything else can be undone.
+function confirmDeletions(describeTarget: string, onDeclined: () => void) {
+  return async (items: { name: string }[]) => {
+    const names = items.slice(0, 5).map(item => item.name).join(', ');
+    const more = items.length > 5 ? ` and ${items.length - 5} more` : '';
+    const confirmed = await showModalConfirm(
+      `Sync will delete ${items.length} item${items.length === 1 ? '' : 's'} from ${describeTarget} ` +
+        `(folders with their contents): ${names}${more}. This cannot be undone.`,
+      'Delete'
+    );
+    if (!confirmed) onDeclined();
+    return confirmed;
   };
 }
 
@@ -50,18 +82,21 @@ export const sync2Remote = createFileHandler<SyncOption>({
     // Attach filePerm and dirPerm to transferOption
     option.filePerm = this.config.filePerm;
     option.dirPerm = this.config.dirPerm;
-    await sync(
-      {
-        srcFsPath: localFsPath,
-        srcFs: localFs,
-        targetFsPath: remoteFsPath,
-        targetFs: remoteFs,
-        transferOption: option,
-        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
-      },
-      t => scheduler.add(t)
+    await collectAndRun(scheduler, () =>
+      sync(
+        {
+          srcFsPath: localFsPath,
+          srcFs: localFs,
+          targetFsPath: remoteFsPath,
+          targetFs: remoteFs,
+          transferOption: option,
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          isCancelled: () => scheduler.stopped,
+        },
+        t => scheduler.add(t),
+        confirmDeletions(`the remote ${remoteFsPath}`, () => scheduler.stop())
+      ).then(() => undefined)
     );
-    await scheduler.run();
   },
   transformOption() {
     const config = this.config;
@@ -90,18 +125,21 @@ export const sync2Local = createFileHandler<SyncOption>({
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
     const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
-    await sync(
-      {
-        srcFsPath: remoteFsPath,
-        srcFs: remoteFs,
-        targetFsPath: localFsPath,
-        targetFs: localFs,
-        transferOption: option,
-        transferDirection: TransferDirection.REMOTE_TO_LOCAL,
-      },
-      t => scheduler.add(t)
+    await collectAndRun(scheduler, () =>
+      sync(
+        {
+          srcFsPath: remoteFsPath,
+          srcFs: remoteFs,
+          targetFsPath: localFsPath,
+          targetFs: localFs,
+          transferOption: option,
+          transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          isCancelled: () => scheduler.stopped,
+        },
+        t => scheduler.add(t),
+        confirmDeletions(`the local ${localFsPath}`, () => scheduler.stop())
+      ).then(() => undefined)
     );
-    await scheduler.run();
   },
   transformOption() {
     const config = this.config;

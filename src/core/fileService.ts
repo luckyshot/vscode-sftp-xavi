@@ -111,6 +111,7 @@ export interface WatcherService {
 interface TransferScheduler {
   // readonly _scheduler: Scheduler;
   size: number;
+  readonly stopped: boolean;
   add(x: TransferTask): void;
   run(): Promise<void>;
   stop(): void;
@@ -448,6 +449,7 @@ export default class FileService {
     let running: Promise<void> | undefined;
     const batch: TransferScheduler = {
       get size() { return tasks.length; },
+      get stopped() { return stopped; },
       stop: () => { stopped = true; tasks.length = 0; },
       add: task => { if (!stopped) tasks.push(task); },
       run: () => {

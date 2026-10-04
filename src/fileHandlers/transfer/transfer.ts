@@ -46,6 +46,8 @@ interface BaseTransferHandleConfig {
   srcFs: FileSystem;
   targetFs: FileSystem;
   transferDirection: TransferDirection;
+  // Polled while walking the tree so a cancelled transfer stops collecting tasks.
+  isCancelled?: () => boolean;
 }
 
 interface TransferHandleConfig<T> extends BaseTransferHandleConfig {
@@ -77,7 +79,7 @@ async function transferFolder(
 ) {
   const { srcFsPath, targetFsPath, srcFs, targetFs, transferOption } = config;
 
-  if (transferOption.ignore && transferOption.ignore(srcFsPath)) {
+  if (config.isCancelled?.() || (transferOption.ignore && transferOption.ignore(srcFsPath))) {
     return;
   }
 
@@ -94,6 +96,7 @@ async function transferFolder(
   validateEntries(fileEntries, srcFs.pathResolver, srcFsPath);
   // Walk directories sequentially so recursion cannot multiply pending requests.
   for (const file of fileEntries) {
+    if (config.isCancelled?.()) return;
     await transferWithType({
       ...config,
       transferOption: { ...config.transferOption, fallbackMode: file.mode, mtime: file.mtime, atime: file.atime },
@@ -219,7 +222,7 @@ async function _sync(
 ) {
 
   const { srcFsPath, targetFsPath, srcFs, targetFs, transferOption, transferDirection } = config;
-  if (transferOption.ignore && transferOption.ignore(srcFsPath)) {
+  if (config.isCancelled?.() || (transferOption.ignore && transferOption.ignore(srcFsPath))) {
     return;
   }
 
@@ -238,9 +241,6 @@ async function _sync(
     const file2trans: [string, string, TransferDirection, InternalTransferOption, FileType][] = [];
     const dir2trans: [string, string, TransferDirection][] = [];
     const dir2sync: [string, string][] = [];
-
-    const fileMissed: string[] = [];
-    const dirMissed: string[] = [];
 
     Object.keys(srcFileTable).forEach(id => {
       const srcFile = srcFileTable[id];
@@ -360,26 +360,9 @@ async function _sync(
         });
       }
     } else if (transferOption.delete) {
-      Object.keys(desFileTable).forEach(id => {
-        const file = desFileTable[id];
-        deleted.push(file);
-        switch (file.type) {
-          case FileType.Directory:
-            dirMissed.push(file.fspath);
-            break;
-          case FileType.File:
-          case FileType.SymbolicLink:
-            fileMissed.push(file.fspath);
-            break;
-          default:
-          // do not process
-        }
-      });
+      // Only recorded here: sync() removes them once the whole tree has been walked.
+      Object.keys(desFileTable).forEach(id => deleted.push(desFileTable[id]));
     }
-
-    // side-effect
-    for (const file of fileMissed) await removeFile(file, targetFs, FileType.File, transferOption);
-    for (const dir of dirMissed) await removeFile(dir, targetFs, FileType.Directory, transferOption);
 
     const directedConfig = (direction: TransferDirection) => ({
       ...config,
@@ -389,17 +372,20 @@ async function _sync(
     });
 
     for (const [src, target, direction, option, type] of file2trans) {
+      if (config.isCancelled?.()) return;
       await transferFile({
         ...directedConfig(direction), transferOption: option,
         srcFsPath: src, targetFsPath: target,
       }, type, collect);
     }
     for (const [src, target, direction] of dir2trans) {
+      if (config.isCancelled?.()) return;
       await transferFolder({
         ...directedConfig(direction), srcFsPath: src, targetFsPath: target,
       }, collect);
     }
     for (const [src, target] of dir2sync) {
+      if (config.isCancelled?.()) return;
       await _sync({ ...config, srcFsPath: src, targetFsPath: target }, collect, deleted);
     }
   };
@@ -434,11 +420,39 @@ export async function transfer(
   await transferWithType({ ...config, transferOption, ensureDirExist: true }, stat.type, collect);
 }
 
+// Removing files is immediate and cannot be cancelled, so it only starts after the
+// tree has been walked, and only if confirmDelete (when given) agrees to the list.
 export async function sync(
   config: TransferHandleConfig<SyncOption>,
-  collect: (t: TransferTask) => void
+  collect: (t: TransferTask) => void,
+  confirmDelete?: (items: FileEntry[]) => Promise<boolean>
 ): Promise<FileEntry[]> {
   const deleted: FileEntry[] = [];
   await _sync(config, collect, deleted);
+
+  const { targetFs, transferOption } = config;
+  const doomed = deleted.filter(
+    entry =>
+      (entry.type === FileType.File ||
+        entry.type === FileType.SymbolicLink ||
+        entry.type === FileType.Directory) &&
+      !(transferOption.ignore && transferOption.ignore(entry.fspath))
+  );
+  if (!doomed.length || config.isCancelled?.()) {
+    return deleted;
+  }
+  if (confirmDelete && !(await confirmDelete(doomed))) {
+    return [];
+  }
+  for (const entry of doomed) {
+    if (entry.type !== FileType.Directory) {
+      await removeFile(entry.fspath, targetFs, FileType.File, transferOption);
+    }
+  }
+  for (const entry of doomed) {
+    if (entry.type === FileType.Directory) {
+      await removeFile(entry.fspath, targetFs, FileType.Directory, transferOption);
+    }
+  }
   return deleted;
 }

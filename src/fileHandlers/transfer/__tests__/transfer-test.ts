@@ -198,6 +198,67 @@ describe('transfer algorithm', () => {
       );
     });
 
+    describe('sync --delete safety', () => {
+      const tree = () => fillFs({
+        local: { a: file('a', 1), c: { 'c-a': file('c-a', 1) } },
+        remote: { a: file('$a'), stale: file('stale'), gone: { inner: file('inner') }, c: { old: file('old') } },
+      });
+      const run = (extra: any = {}, confirm?: any) => sync({
+        srcFsPath: '/local', srcFs: localFs,
+        targetFsPath: '/remote', targetFs: localFs,
+        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+        transferOption: { delete: true, perserveTargetMode: false },
+        ...extra,
+      }, () => undefined, confirm);
+
+      test('lists everything it will delete and removes it only once confirmed', async () => {
+        tree();
+        const confirm = jest.fn(async items => {
+          expect(mapList(items, 'fspath').sort()).toEqual(
+            ['/remote/c/old', '/remote/gone', '/remote/stale'].formatSep().sort()
+          );
+          expect(fs.existsSync('/remote/stale')).toBe(true);
+          return true;
+        });
+        await run({}, confirm);
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(['stale', 'gone', 'c/old'].map(p => fs.existsSync('/remote/' + p))).toEqual([false, false, false]);
+        expect(fs.existsSync('/remote/a')).toBe(true);
+      });
+
+      test('deletes nothing when the confirmation is declined', async () => {
+        tree();
+        const deleted = await run({}, async () => false);
+        expect(deleted).toEqual([]);
+        expect(['stale', 'gone/inner', 'c/old'].map(p => fs.existsSync('/remote/' + p))).toEqual([true, true, true]);
+      });
+
+      test('deletes nothing when cancelled while walking the tree', async () => {
+        tree();
+        let cancelled = false;
+        const confirm = jest.fn(async () => true);
+        await sync({
+          srcFsPath: '/local', srcFs: localFs,
+          targetFsPath: '/remote', targetFs: localFs,
+          transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          transferOption: { delete: true, perserveTargetMode: false },
+          isCancelled: () => cancelled,
+        }, () => { cancelled = true; }, confirm);
+        expect(confirm).not.toHaveBeenCalled();
+        expect(fs.existsSync('/remote/stale')).toBe(true);
+      });
+
+      test('keeps ignored entries out of the confirmation and the deletion', async () => {
+        tree();
+        const confirm = jest.fn(async (_items: any[]) => true);
+        await run({ transferOption: { delete: true, perserveTargetMode: false, ignore: p => p.endsWith('stale') } }, confirm);
+        expect(mapList(confirm.mock.calls[0][0], 'fspath').sort()).toEqual(
+          ['/remote/c/old', '/remote/gone'].formatSep().sort()
+        );
+        expect(fs.existsSync('/remote/stale')).toBe(true);
+      });
+    });
+
     test('sync --delete', async () => {
       fillFs({
         local: {

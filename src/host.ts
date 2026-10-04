@@ -97,6 +97,11 @@ export async function showConfirmMessage(
   return Boolean(result && result.title === confirmLabel);
 }
 
+export async function showModalConfirm(message: string, confirmLabel: string) {
+  const result = await vscode.window.showWarningMessage(message, { modal: true }, confirmLabel);
+  return result === confirmLabel;
+}
+
 export function showOpenDialog(options: vscode.OpenDialogOptions) {
   return vscode.window.showOpenDialog(options);
 }
