@@ -1,4 +1,5 @@
 import FileSystem, { FileOption } from './fileSystem';
+import readStream from '../readStream';
 import { RemoteClient, ConnectOption, RemoteClientConfig } from '../remote-client';
 
 interface RFSOptionDefaults {
@@ -77,31 +78,7 @@ export default abstract class RemoteFileSystem extends FileSystem {
   }
 
   async readFile(path: string, option?: FileOption): Promise<string | Buffer> {
-    return new Promise<string | Buffer>(async (resolve, reject) => {
-      let stream;
-      try {
-        stream = await this.get(path, option);
-      } catch (error) {
-        return reject(error);
-      }
-
-      const arr: Buffer[] = [];
-      const onData = chunk => {
-        arr.push(chunk);
-      };
-      const onEnd = err => {
-        if (err) {
-          return reject(err);
-        }
-
-        const buffer = Buffer.concat(arr);
-        resolve(option && option.encoding ? buffer.toString(option.encoding) : buffer);
-      };
-
-      stream.on('data', onData);
-      stream.on('error', onEnd);
-      stream.on('end', onEnd);
-    });
+    return readStream(options => this.get(path, options), option);
   }
 
   protected abstract _createClient(option: ConnectOption): any;

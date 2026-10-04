@@ -294,3 +294,5 @@ If you would like to support the original maintainer's work, you can [buy Natizy
 ### SSH server verification
 
 SFTP verifies the server host key before authentication, including each jump host. The first connection asks you to verify and trust the displayed SHA256 fingerprint; accepted keys are stored in VS Code's extension global state. Changed keys are rejected. You can set `hostFingerprint` to an independently verified fingerprint such as `SHA256:...` in the server, profile, or hop configuration. When a server intentionally rotates its key, update this pin after verifying it with your administrator. Terminal connections use OpenSSH's own host-key verification.
+
+Remote previews are limited to 10 MiB by default. Adjust `sftpXavi.maxRemotePreviewBytes` to change the limit, or download larger files. Cancelling a preview stops its read stream.

@@ -69,6 +69,12 @@
           "default": false,
           "description": "Write debug logs to the SFTP Xavi output channel. Reload VS Code after changing this setting."
         },
+        "sftpXavi.maxRemotePreviewBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10485760,
+          "description": "Maximum remote file size to preview in bytes. Download larger files instead."
+        },
         "sftpXavi.downloadWhenOpenInRemoteExplorer": {
           "type": "boolean",
           "default": false,

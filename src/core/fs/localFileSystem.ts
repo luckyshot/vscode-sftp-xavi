@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
 import mapConcurrent from '../mapConcurrent';
+import readStream from '../readStream';
 import FileSystem, { FileEntry, FileStats, FileOption } from './fileSystem';
 
 export default class LocalFileSystem extends FileSystem {
@@ -32,6 +33,7 @@ export default class LocalFileSystem extends FileSystem {
   }
 
   readFile(path, option?): Promise<string | Buffer> {
+    if (option?.maxBytes !== undefined || option?.signal) return readStream(options => this.get(path, options), option);
     return new Promise((resolve, reject) => {
       fs.readFile(path, option, (err, data) => {
         if (err) {

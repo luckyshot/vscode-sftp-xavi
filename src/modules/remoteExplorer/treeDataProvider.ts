@@ -225,10 +225,22 @@ export default class RemoteTreeData
       throw new Error(`Can't find remote for resource ${uri}.`);
     }
 
-    const config = root.explorerContext.config;
-    const remotefs = await root.explorerContext.fileService.getRemoteFileSystem(config);
-    const buffer = await remotefs.readFile(UResource.makeResource(uri).fsPath);
-    return buffer.toString();
+    const controller = new AbortController();
+    const cancellation = token.onCancellationRequested(() => controller.abort());
+    if (token.isCancellationRequested) controller.abort();
+    try {
+      const config = root.explorerContext.config;
+      const remotefs = await root.explorerContext.fileService.getRemoteFileSystem(config);
+      if (controller.signal.aborted) throw new Error('Remote preview cancelled');
+      const maxBytes = getExtensionSetting().get<number>('maxRemotePreviewBytes', 10 * 1024 * 1024);
+      const filepath = UResource.makeResource(uri).fsPath;
+      const stat = await remotefs.lstat(filepath);
+      if (stat.size > maxBytes) throw new Error(`Remote file is too large to preview (${stat.size} bytes). Download it instead.`);
+      const buffer = await remotefs.readFile(filepath, { maxBytes, signal: controller.signal });
+      return buffer.toString();
+    } finally {
+      cancellation.dispose();
+    }
   }
 
   showItem(item: ExplorerItem): void {

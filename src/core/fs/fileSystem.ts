@@ -17,6 +17,8 @@ export enum FileType {
 }
 
 export interface FileOption {
+  maxBytes?: number;
+  signal?: AbortSignal;
   flags?: string;
   encoding?: BufferEncoding;
   mode?: number;
