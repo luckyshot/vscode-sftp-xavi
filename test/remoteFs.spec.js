@@ -21,3 +21,21 @@ test('different servers get different connections while reordered options reuse 
   expect(await createRemoteIfNoneExist(Object.fromEntries(Object.entries(opts).reverse()))).toBe(first);
   expect(connect).toHaveBeenCalledTimes(2);
 });
+
+test('late disconnect events from an old client do not close its replacement', async () => {
+  jest.spyOn(Client.prototype, 'connect').mockImplementation(function () { queueMicrotask(() => this.emit('ready')); return this; });
+  const end = jest.spyOn(Client.prototype, 'end').mockReturnThis();
+  jest.spyOn(Client.prototype, 'sftp').mockImplementation(cb => cb(null, {}));
+  const { removeRemoteFs } = require('../src/core/remoteFs');
+  const options = { host: 'reconnect-test', port: 22, username: 'u', password: 'p', protocol: 'sftp', remoteTimeOffsetInHours: 0 };
+  const first = await createRemoteIfNoneExist(options);
+  const oldClient = first.getClient()._client;
+  oldClient.emit('end');
+  const replacement = await createRemoteIfNoneExist(options);
+  const newClient = replacement.getClient()._client;
+  end.mockClear();
+  oldClient.emit('close');
+  expect(end.mock.instances).not.toContain(newClient);
+  expect(await createRemoteIfNoneExist(options)).toBe(replacement);
+  removeRemoteFs(options);
+});

@@ -30,7 +30,7 @@ class KeepAliveRemoteFs {
 
   private pendingPromise: Promise<RemoteFileSystem> | null;
 
-  private fs: RemoteFileSystem;
+  private fs: RemoteFileSystem | undefined;
 
   async getFs(
     option: ConnectOption & {
@@ -40,7 +40,7 @@ class KeepAliveRemoteFs {
   ): Promise<RemoteFileSystem> {
     if (this.isValid) {
       this.pendingPromise = null;
-      return Promise.resolve(this.fs);
+      return Promise.resolve(this.fs!);
     }
 
     if (this.pendingPromise) {
@@ -78,41 +78,46 @@ class KeepAliveRemoteFs {
       throw new Error(`unsupported protocol ${option.protocol}`);
     }
 
-    this.fs = new FsConstructor(upath, {
+    const fs = new FsConstructor(upath, {
       clientOption: connectOption,
       remoteTimeOffsetInHours: option.remoteTimeOffsetInHours,
     });
-    this.fs.onDisconnected(this.invalid.bind(this));
+    this.fs = fs;
+    fs.onDisconnected(() => this.invalid(fs));
 
     app.sftpBarItem.showMsg('connecting...', connectOption.connectTimeout);
-    this.pendingPromise = this.fs
+    const pending = fs
       .connect(connectOption, {
         askForPasswd: promptForPassword,
       })
       .then(
         () => {
+          if (this.fs !== fs) throw new Error('Connection closed before initialization completed');
           app.sftpBarItem.reset();
           this.isValid = true;
-          return this.fs;
+          return fs;
         },
         err => {
-          this.fs.end();
-          this.invalid('error');
+          this.invalid(fs);
           throw err;
         }
-      );
-
-    return this.pendingPromise;
+      ).finally(() => {
+        if (this.pendingPromise === pending) this.pendingPromise = null;
+      });
+    this.pendingPromise = pending;
+    return pending;
   }
 
-  invalid(reason: string) {
+  invalid(fs: RemoteFileSystem) {
+    if (this.fs !== fs) return;
+    this.fs = undefined;
     this.pendingPromise = null;
-    this.fs.end();
     this.isValid = false;
+    fs.end();
   }
 
   end() {
-    this.fs.end();
+    if (this.fs) this.invalid(this.fs);
   }
 }
 
