@@ -1,8 +1,8 @@
 {
   "name": "sftp-xavi",
-  "displayName": "VS Code SFTP Xavi",
-  "description": "Sync files over SFTP and FTP with upload on save, remote browsing, profiles, and directory synchronization.",
-  "version": "1.16.3",
+  "displayName": "SFTP Xavi",
+  "description": "An independently maintained SFTP/FTP sync extension with remote browsing, profiles, and upload on save.",
+  "version": "2.0.0",
   "publisher": "luckyshot",
   "author": "Xavi Esteve (https://github.com/luckyshot)",
   "engines": {
@@ -41,7 +41,7 @@
       "activitybar": [
         {
           "id": "sftpXavi",
-          "title": "VS Code SFTP Xavi",
+          "title": "SFTP Xavi",
           "icon": "resources/remote-explorer.svg"
         }
       ]
@@ -57,17 +57,17 @@
     },
     "configuration": {
       "type": "object",
-      "title": "VS Code SFTP Xavi",
+      "title": "SFTP Xavi",
       "properties": {
         "sftpXavi.printDebugLog": {
           "type": "boolean",
           "default": false,
-          "description": "Write debug logs to the VS Code SFTP Xavi output channel. Reload VS Code after changing this setting."
+          "description": "Write debug logs to the SFTP Xavi output channel. Reload VS Code after changing this setting."
         },
         "sftpXavi.debug": {
           "type": "boolean",
           "default": false,
-          "description": "Write debug logs to the VS Code SFTP Xavi output channel. Reload VS Code after changing this setting."
+          "description": "Write debug logs to the SFTP Xavi output channel. Reload VS Code after changing this setting."
         },
         "sftpXavi.downloadWhenOpenInRemoteExplorer": {
           "type": "boolean",
@@ -754,5 +754,10 @@
       "<rootDir>/test/**/*.spec.js",
       "<rootDir>/**/*/__tests__/*.ts"
     ]
+  },
+  "preview": true,
+  "galleryBanner": {
+    "color": "#152225",
+    "theme": "dark"
   }
 }

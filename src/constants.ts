@@ -3,7 +3,7 @@ import * as path from 'path';
 const VENDOR_FOLDER = '.vscode';
 
 export const EXTENSION_NAME = 'sftpXavi';
-export const EXTENSION_DISPLAY_NAME = 'VS Code SFTP Xavi';
+export const EXTENSION_DISPLAY_NAME = 'SFTP Xavi';
 export const REMOTE_EXPLORER_VIEW_ID = 'sftpXavi.remoteExplorer';
 export const SETTING_KEY_REMOTE = 'remotefs.remote';
 
