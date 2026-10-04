@@ -286,6 +286,16 @@
         "category": "SFTP Xavi"
       },
       {
+        "command": "sftpXavi.remoteExplorer.compareWithLocal",
+        "title": "Compare with Local",
+        "category": "SFTP Xavi"
+      },
+      {
+        "command": "sftpXavi.remoteExplorer.checkContent",
+        "title": "Check Whether Content Differs",
+        "category": "SFTP Xavi"
+      },
+      {
         "command": "sftpXavi.remoteExplorer.refresh",
         "title": "Refresh",
         "icon": {
@@ -455,6 +465,14 @@
           "when": "false"
         },
         {
+          "command": "sftpXavi.remoteExplorer.compareWithLocal",
+          "when": "false"
+        },
+        {
+          "command": "sftpXavi.remoteExplorer.checkContent",
+          "when": "false"
+        },
+        {
           "command": "sftpXavi.remoteExplorer.refresh",
           "when": "false"
         }
@@ -581,12 +599,22 @@
         {
           "command": "sftpXavi.remoteExplorer.editInLocal",
           "group": "2_files",
-          "when": "view == sftpXavi.remoteExplorer && viewItem == file && !config.sftpXavi.downloadWhenOpenInRemoteExplorer"
+          "when": "view == sftpXavi.remoteExplorer && viewItem =~ /^file/ && !config.sftpXavi.downloadWhenOpenInRemoteExplorer"
         },
         {
           "command": "sftpXavi.viewContent",
           "group": "2_files",
-          "when": "view == sftpXavi.remoteExplorer && viewItem == file && config.sftpXavi.downloadWhenOpenInRemoteExplorer"
+          "when": "view == sftpXavi.remoteExplorer && viewItem =~ /^file/ && config.sftpXavi.downloadWhenOpenInRemoteExplorer"
+        },
+        {
+          "command": "sftpXavi.remoteExplorer.compareWithLocal",
+          "group": "2_files@0",
+          "when": "view == sftpXavi.remoteExplorer && viewItem =~ /^file\\.(modified|same|typeMismatch|unknown)$/"
+        },
+        {
+          "command": "sftpXavi.remoteExplorer.checkContent",
+          "group": "2_files@0",
+          "when": "view == sftpXavi.remoteExplorer && viewItem =~ /^file\\.(modified|same)$/"
         },
         {
           "command": "sftpXavi.revealInExplorer",
@@ -597,34 +625,34 @@
           "command": "sftpXavi.upload.folder",
           "group": "3_trans@1",
           "alt": "sftpXavi.forceUpload",
-          "when": "sftpXavi.enabled && viewItem != file"
+          "when": "sftpXavi.enabled && viewItem !~ /^file/"
         },
         {
           "command": "sftpXavi.upload.file",
           "group": "3_trans@1",
-          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem =~ /^file/"
         },
         {
           "command": "sftpXavi.upload.folder.to.allProfiles",
           "group": "3_trans@1",
           "alt": "sftpXavi.forceUpload.to.allProfiles",
-          "when": "sftpXavi.enabled && viewItem != file"
+          "when": "sftpXavi.enabled && viewItem !~ /^file/"
         },
         {
           "command": "sftpXavi.upload.file.to.allProfiles",
           "group": "3_trans@1",
-          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem =~ /^file/"
         },
         {
           "command": "sftpXavi.download.folder",
           "group": "3_trans@2",
           "alt": "sftpXavi.forceDownload",
-          "when": "sftpXavi.enabled && viewItem != file"
+          "when": "sftpXavi.enabled && viewItem !~ /^file/"
         },
         {
           "command": "sftpXavi.download.file",
           "group": "3_trans@2",
-          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem =~ /^file/"
         },
         {
           "command": "sftpXavi.delete.remote",
@@ -634,17 +662,17 @@
         {
           "command": "sftpXavi.create.folder",
           "group": "7_modification",
-          "when": "view == sftpXavi.remoteExplorer && viewItem != file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem !~ /^file/"
         },
         {
           "command": "sftpXavi.create.file",
           "group": "7_modification",
-          "when": "view == sftpXavi.remoteExplorer && viewItem != file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem !~ /^file/"
         },
         {
           "command": "sftpXavi.download.file",
           "group": "inline",
-          "when": "view == sftpXavi.remoteExplorer && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem =~ /^file/"
         },
         {
           "command": "sftpXavi.download.folder",
