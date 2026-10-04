@@ -1,5 +1,10 @@
 import GitIgnore from 'ignore';
 
+// Configuration files can contain credentials and must never be uploaded.
+export function isProtectedConfigPath(pathname: string): boolean {
+  return /(^|[\\/])\.vscode[\\/]sftp\.json$/i.test(pathname);
+}
+
 export default class Ignore {
   static from(pattern) {
     return new Ignore(pattern);

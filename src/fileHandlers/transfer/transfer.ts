@@ -11,6 +11,7 @@ import { FileHandleOption } from '../option';
 import { flatten } from '../../utils';
 import logger from '../../logger';
 import { getOpenTextDocuments } from '../../host';
+import { isProtectedConfigPath } from '../../core/ignore';
 
 interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {}
 
@@ -118,6 +119,12 @@ async function transferFile(
   fileType: FileType,
   collect: (t: TransferTask) => void
 ) {
+  // Force upload bypasses user patterns, but never configuration credentials.
+  if (config.transferDirection === TransferDirection.LOCAL_TO_REMOTE &&
+      isProtectedConfigPath(config.srcFsPath)) {
+    return;
+  }
+
   if (config.transferOption.ignore && config.transferOption.ignore(config.srcFsPath)) {
     return;
   }

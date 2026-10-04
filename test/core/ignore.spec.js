@@ -45,3 +45,14 @@ describe('transfer ignore rules', () => {
     expect(ignore('/site/app.js')).toBe(false);
   });
 });
+
+
+test.each([{ patterns: [] }, { patterns: ['!**/.vscode/sftp.json'] }])('SFTP configuration stays excluded with ignore rules %p', ({ patterns }) => {
+  const ignore = serviceIgnore('/site', '/www', patterns);
+  expect(typeof ignore).toBe('function');
+  expect(ignore('/site/.vscode/sftp.json')).toBe(true);
+  expect(ignore('/site/nested/.vscode/sftp.json')).toBe(true);
+  expect(ignore('/www/.vscode/sftp.json')).toBe(true);
+  expect(ignore('/site/.vscode/settings.json')).toBe(false);
+  expect(ignore('/site/sftp.json')).toBe(false);
+});
