@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as sshConfig from 'ssh-config';
+import sshConfig from 'ssh-config';
 import app from '../app';
 import logger from '../logger';
 import { getUserSetting } from '../host';
@@ -115,7 +115,7 @@ interface TransferScheduler {
   stop(): void;
 }
 
-type ConfigValidator = (x: any) => { message: string };
+type ConfigValidator = (x: any) => { message: string } | undefined;
 
 const DEFAULT_SSHCONFIG_FILE = '~/.ssh/config';
 
@@ -240,7 +240,7 @@ function mergeConfigWithExternalRefer(
     Host: copyed.host,
   });
 
-  if (section === null) {
+  if (!section || !('config' in section)) {
     return copyed;
   }
 
@@ -254,50 +254,25 @@ function mergeConfigWithExternalRefer(
   ]);
 
   section.config.forEach(line => {
-    if (!line.param) {
+    if (!('param' in line)) {
       return;
     }
 
     const key = mapping.get(line.param.toLowerCase());
 
     if (key !== undefined) {
-      if (key === 'host') {
-        copyed[key] = line.value;
-      } else {
-        setConfigValue(copyed, key, line.value);
-      }
-    }
-  });
-
-  // Bug introduced in pull request #69 : Fix ssh config resolution
-  /* const parsedSSHConfig = sshConfig.parse(sshConfigContent);
-  const computed = parsedSSHConfig.compute(copyed.host);
-
-  const mapping = new Map([
-    ['hostname', 'host'],
-    ['port', 'port'],
-    ['user', 'username'],
-    ['serveraliveinterval', 'keepalive'],
-    ['connecttimeout', 'connTimeout'],
-  ]);
-
-  Object.entries<any>(computed).forEach(([param, value]) => {
-    if (param.toLowerCase() === 'identityfile') {
-      setConfigValue(copyed, 'privateKeyPath', value[0]);
-      return;
-    }
-
-    const key = mapping.get(param.toLowerCase());
-
-    if (key !== undefined) {
-      // don't need consider config priority, always set to the resolve host.
+      const value = typeof line.value === 'string'
+        ? line.value
+        : line.value.map(part => part.val).join(' ');
       if (key === 'host') {
         copyed[key] = value;
       } else {
         setConfigValue(copyed, key, value);
       }
     }
-  }); */
+  });
+
+
 
   return copyed;
 }
@@ -541,7 +516,6 @@ export default class FileService {
       this._configValidator && this._configValidator(completeConfig);
     if (error) {
       let errorMsg = `Config validation fail: ${error.message}.`;
-      // tslint:disable-next-line triple-equals
       if (hasProfile && app.state.profile == null) {
         errorMsg += ' You might want to set a profile first.';
       }

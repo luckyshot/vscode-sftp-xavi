@@ -1,4 +1,4 @@
-import * as PQueue from 'p-queue';
+import SerialQueue from '../serialQueue';
 import { Readable } from 'stream';
 import logger from '../../logger';
 import { FileEntry, FileType, FileStats, FileOption } from './fileSystem';
@@ -21,7 +21,6 @@ function toNumMode(rightObj) {
   // some ftp server would reusult rightObj undefined.
   if (!rightObj) return 0o666;
 
-  // tslint:disable-next-line:no-shadowed-variable
   const modeStr = Object.keys(rightObj).reduce((modeStr, key) => {
     const rightStr = rightObj[key];
     let cur = 0;
@@ -49,7 +48,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
     }
   }
 
-  private queue: any = new PQueue({ concurrency: 1 });
+  private readonly queue = new SerialQueue();
 
   get ftp() {
     return this.getClient().getFsClient();

@@ -97,6 +97,6 @@ export default class RemoteExplorer {
 
       this.refresh(remoteFileItem);
     }
-    
+
   }
 }

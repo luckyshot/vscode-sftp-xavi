@@ -5,7 +5,7 @@ jest.mock('vscode', () => ({
 jest.mock('../src/app', () => ({
   __esModule: true,
   default: {
-    fsCache: { has: jest.fn(), del: jest.fn() },
+    fsCache: { has: jest.fn(), delete: jest.fn() },
     sftpBarItem: { updateStatus: jest.fn() },
     remoteExplorer: { refresh: jest.fn() },
   },

@@ -69,7 +69,6 @@ async function loadCommands(requireContext, nameRegex, commandCreator, context: 
     commandOption.name = nomalizeCommandName(match[1]);
 
     try {
-      // tslint:disable-next-line variable-name
       const Cmd = commandCreator(commandOption);
       const cmdInstance: Command = new Cmd();
       logger.debug(`register command "${commandOption.name}" from "${fileName}"`);
