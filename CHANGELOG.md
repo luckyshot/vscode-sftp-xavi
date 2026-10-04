@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.2.0 - 2026-10-04
+
 * Transfers of 5 or more files (folder uploads, downloads and syncs) show a progress notification with a file count and a Cancel button. While a transfer runs, clicking the SFTP Xavi status bar item cancels it.
 * `.vscode/sftp.json` now accepts comments and trailing commas (JSONC). **SFTP Xavi: Config** creates a commented template, and the file opens in JSONC mode without editor warnings.
 
