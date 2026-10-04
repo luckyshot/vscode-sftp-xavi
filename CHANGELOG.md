@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.3.0 - 2026-10-04
+
 * Add **SFTP Xavi: Check for Updates**. It looks at the latest GitHub release and says which version you have and whether a newer one exists. When one does, a notification offers **Update** (downloads the release VSIX, checks it against the checksum GitHub publishes for it, and installs it), **Skip this version**, or **Remind later** (postpones 7 days).
 * SFTP Xavi now checks for a newer release automatically once a week, and only ever asks before installing. Turn it off with `sftpXavi.updates.checkAutomatically`.
 
