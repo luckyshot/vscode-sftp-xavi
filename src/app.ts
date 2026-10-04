@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache';
 import StatusBarItem from './ui/statusBarItem';
-import { COMMAND_TOGGLE_OUTPUT } from './constants';
+import { COMMAND_TOGGLE_OUTPUT, EXTENSION_DISPLAY_NAME } from './constants';
 import AppState from './modules/appState';
 import RemoteExplorer from './modules/remoteExplorer';
 
@@ -17,12 +17,12 @@ app.state = new AppState();
 app.sftpBarItem = new StatusBarItem(
   () => {
     if (app.state.profile) {
-      return `SFTP: ${app.state.profile}`;
+      return `SFTP Xavi: ${app.state.profile}`;
     } else {
-      return 'SFTP';
+      return 'SFTP Xavi';
     }
   },
-  'SFTP@Natizyskunk',
+  EXTENSION_DISPLAY_NAME,
   COMMAND_TOGGLE_OUTPUT
 );
 app.fsCache = new LRUCache<string, string>({ max: 6 });

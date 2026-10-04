@@ -505,7 +505,7 @@ export default class FileService {
         throw new Error(
           `Unkown Profile "${useProfile}".` +
             ' Please check your profile setting.' +
-            ' You can set a profile by running command `SFTP: Set Profile`.'
+            ' You can set a profile by running command `SFTP Xavi: Set Profile`.'
         );
       }
       config = mergeProfile(config, profile);

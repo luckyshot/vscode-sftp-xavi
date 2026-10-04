@@ -1,4 +1,5 @@
 ## Unreleased
+* Rebrand the fork as VS Code SFTP Xavi with the separate extension ID `luckyshot.sftp-xavi`, `SFTP Xavi` commands, and `sftpXavi.*` settings. Existing `.vscode/sftp.json` files remain compatible. Preserve upstream attribution in LICENSE, NOTICE.md, and historical credits.
 * Require VS Code 1.100 or newer; development tools require Node.js 22.14 or newer.
 * Modernize TypeScript, webpack, Jest and ESLint; upgrade configuration, filesystem, ignore and cache libraries and remove unused dependencies.
 * Simplify serialized FTP operations, update development and CI workflows, and exclude duplicate bundled libraries from the extension package.
