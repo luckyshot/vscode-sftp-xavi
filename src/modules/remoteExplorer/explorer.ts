@@ -61,7 +61,7 @@ export default class RemoteExplorer {
       }
       const config = fileService.getConfig();
       const localPath = item.resource.fsPath;
-      const remotePath = toRemotePath(localPath, config.context, config.remotePath);
+      const remotePath = toRemotePath(localPath, fileService.baseDir, config.remotePath);
       item.resource = UResource.makeResource({
         remote: {
           host: config.host,
