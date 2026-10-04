@@ -2,7 +2,7 @@
   "name": "sftp-xavi",
   "displayName": "SFTP Xavi",
   "description": "An independently maintained SFTP/FTP sync extension with remote browsing, profiles, and upload on save.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "publisher": "luckyshot",
   "author": "Xavi Esteve (https://github.com/luckyshot)",
   "engines": {

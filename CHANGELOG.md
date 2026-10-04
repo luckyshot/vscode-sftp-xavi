@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.0.2 - 2026-10-04
+
+* Fix SFTP connections failing with an undefined event listener and closing the SSH client before connecting.
+
 ## 2.0.1 - 2026-10-04
 
 * Replace the abstract icon with a document and clear upload/download arrows, with a matching remote-explorer glyph.
