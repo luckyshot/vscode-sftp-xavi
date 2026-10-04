@@ -84,3 +84,17 @@ describe('summarizeDecoration', () => {
     expect(summarizeDecoration({ state: SyncState.Same }, 0).state).toBe(SyncState.Same);
   });
 });
+
+describe('mtime tolerance', () => {
+  const tol = { compareMtime: true, mtimeToleranceSeconds: 5 };
+
+  test('mtimes within the tolerance count as identical when sizes match', () => {
+    expect(compareEntries(file(5, 1000), file(5, 4000), tol).state).toBe(SyncState.Same);
+    expect(compareEntries(file(5, 1000), file(5, 6000), tol).state).toBe(SyncState.Same);
+    expect(compareEntries(file(5, 1000), file(5, 7000), tol)).toEqual({ state: SyncState.Modified, newer: 'remote' });
+  });
+
+  test('a size difference is always modified', () => {
+    expect(compareEntries(file(5, 1000), file(6, 1000), tol).state).toBe(SyncState.Modified);
+  });
+});

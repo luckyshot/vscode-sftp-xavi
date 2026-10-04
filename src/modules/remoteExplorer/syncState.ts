@@ -20,6 +20,8 @@ export interface Comparable {
 export interface CompareOptions {
   /** FTP servers often report unreliable mtimes, so allow comparing size only. */
   compareMtime: boolean;
+  /** Mtimes closer than this many seconds count as equal (uploads rarely preserve them exactly). */
+  mtimeToleranceSeconds?: number;
 }
 
 export interface CompareResult {
@@ -31,7 +33,7 @@ export interface CompareResult {
 export function compareEntries(
   local: Comparable | null,
   remote: Comparable | null,
-  { compareMtime }: CompareOptions
+  { compareMtime, mtimeToleranceSeconds = 0 }: CompareOptions
 ): CompareResult {
   if (!local && !remote) return { state: SyncState.Unknown };
   if (!local) return { state: SyncState.RemoteOnly };
@@ -42,7 +44,7 @@ export function compareEntries(
 
   const localSecs = Math.floor(local.mtime / 1000);
   const remoteSecs = Math.floor(remote.mtime / 1000);
-  const mtimeDiffers = compareMtime && localSecs !== remoteSecs;
+  const mtimeDiffers = compareMtime && Math.abs(localSecs - remoteSecs) > mtimeToleranceSeconds;
   if (local.size === remote.size && !mtimeDiffers) return { state: SyncState.Same };
 
   if (!compareMtime || !mtimeDiffers) return { state: SyncState.Modified };

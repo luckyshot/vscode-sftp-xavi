@@ -235,7 +235,7 @@ export default class RemoteTreeData
       let result: CompareResult = compareEntries(
         local && { isDirectory: local.type === FileType.Directory, size: local.size, mtime: local.mtime },
         { isDirectory: isDir, size: entry.size, mtime: entry.mtime },
-        { compareMtime }
+        { compareMtime, mtimeToleranceSeconds: getExtensionSetting().get<number>('mtimeToleranceSeconds', 5) }
       );
       // sync commands skip ignored paths in both directions, so don't flag them as differences
       if (result.state !== SyncState.Unknown && config.ignore && config.ignore(localPath)) {

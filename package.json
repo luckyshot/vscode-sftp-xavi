@@ -69,6 +69,12 @@
           "default": false,
           "description": "Write debug logs to the SFTP Xavi output channel. Reload VS Code after changing this setting."
         },
+        "sftpXavi.mtimeToleranceSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5,
+          "description": "Files of the same size whose modified times differ by no more than this many seconds are treated as identical in the Remote Explorer. Uploads rarely preserve modified times exactly. Reload the Remote Explorer after changing it."
+        },
         "sftpXavi.maxRemotePreviewBytes": {
           "type": "integer",
           "minimum": 1,
