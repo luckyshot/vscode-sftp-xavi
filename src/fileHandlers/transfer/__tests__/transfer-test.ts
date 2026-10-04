@@ -1,9 +1,10 @@
 jest.mock('fs');
+jest.mock('../../../host', () => ({ getOpenTextDocuments: () => [], getUserSetting: () => ({}) }));
 
 import { vol } from 'memfs';
 import * as fs from 'fs';
 import * as path from 'path';
-import { sync, TransferDirection } from '../transfer';
+import { sync, transfer, TransferDirection } from '../transfer';
 import localFs from '../../../core/localFs';
 import TransferTask from '../../../core/transferTask';
 import RemoteFs from '../../../../test/helper/localRemoteFs';
@@ -81,6 +82,39 @@ describe('transfer algorithm', () => {
   describe('sync', () => {
     afterEach(() => {
       vol.reset();
+    });
+
+    test.each([undefined, null])('sync excludes credentials even without ignore rules (%p)', async ignore => {
+      fillFs({
+        local: {
+          '.vscode': { 'sftp.json': file('credentials'), 'settings.json': file('{}') },
+          nested: { '.vscode': { 'sftp.json': file('nested credentials') } },
+          'index.php': file('public'),
+        },
+        remote: {},
+      });
+      const tasks: TransferTask[] = [];
+      await sync({
+        srcFsPath: '/local', srcFs: localFs,
+        targetFsPath: '/remote', targetFs: localFs,
+        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+        transferOption: { ignore, perserveTargetMode: false },
+      }, task => tasks.push(task));
+      expect(mapList(tasks, 'targetFsPath').sort()).toEqual(
+        ['/remote/.vscode/settings.json', '/remote/index.php'].formatSep().sort()
+      );
+    });
+
+    test('direct force upload cannot transfer the SFTP configuration', async () => {
+      fillFs({ local: { '.vscode': { 'sftp.json': file('credentials') } }, remote: {} });
+      const tasks: TransferTask[] = [];
+      await transfer({
+        srcFsPath: '/local/.vscode/sftp.json', srcFs: localFs,
+        targetFsPath: '/remote/.vscode/sftp.json', targetFs: localFs,
+        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+        transferOption: { ignore: null, perserveTargetMode: false },
+      }, task => tasks.push(task));
+      expect(tasks.length).toBe(0);
     });
 
     test('sync', async () => {

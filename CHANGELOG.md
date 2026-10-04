@@ -1,3 +1,9 @@
+## Unreleased
+* Prevent uploading .vscode/sftp.json credentials, including nested configurations, empty ignore lists, negated patterns and Force Upload (upstream #337, #540, #576).
+* Fix ignore rules for Windows drive/UNC casing and overlapping local/remote path prefixes. Upload Changed Files now excludes ignored changes from its actions and summary, waits for transfers, and catches asynchronous failures (upstream #577).
+* Fix upload-on-save losing its configuration when Windows drive/UNC casing or a symlink differs from the workspace path (upstream #363, #397, #589). Map local paths without synchronous realpath calls or treating path strings as URIs.
+* Fix SFTP downloads, diffs and timestamp serialization on modern VS Code runtimes by upgrading ssh2 to 1.17.0 (upstream #586, #588, #590).
+
 ## 1.16.3 - 2023-06-16
 * [#356] New Feature : Upload to all profiles (Pull request [#313](https://github.com/Natizyskunk/vscode-sftp/pull/313) from @wewawa vscode-sftp:create_multi_command).
 * [#357] Fix : Correcting Typo 'avaliable' => 'available' (Pull request [#343](https://github.com/Natizyskunk/vscode-sftp/pull/343) from @kjo-sdds vscode-sftp:develop).

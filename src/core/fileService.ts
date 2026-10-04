@@ -8,7 +8,7 @@ import { getUserSetting } from '../host';
 import { replaceHomePath, resolvePath } from '../helper';
 import { SETTING_KEY_REMOTE } from '../constants';
 import upath from './upath';
-import Ignore from './ignore';
+import Ignore, { isProtectedConfigPath } from './ignore';
 import { FileSystem } from './fs';
 import Scheduler from './scheduler';
 import { createRemoteIfNoneExist, removeRemoteFs } from './remoteFs';
@@ -593,22 +593,19 @@ export default class FileService {
     const remoteContext = config.remotePath;
 
     const ignoreConfig = filesIgnoredFromConfig(config);
-    if (ignoreConfig.length <= 0) {
-      return null;
-    }
-
     const ignore = Ignore.from(ignoreConfig);
     const ignoreFunc = fsPath => {
-      // vscode will always return path with / as separator
-      const normalizedPath = path.normalize(fsPath);
-      let relativePath;
-      if (normalizedPath.indexOf(localContext) === 0) {
-        // local path
-        relativePath = path.relative(localContext, fsPath);
-      } else {
-        // remote path
-        relativePath = upath.relative(remoteContext, fsPath);
+      if (isProtectedConfigPath(fsPath)) {
+        return true;
       }
+      // Native relative paths handle drive/UNC casing on Windows and enforce
+      // directory boundaries, unlike a case-sensitive string prefix check.
+      const localRelative = path.relative(localContext, fsPath);
+      const isLocal = localRelative !== '..' &&
+        !localRelative.startsWith('..' + path.sep) && !path.isAbsolute(localRelative);
+      const relativePath = upath.normalize(isLocal
+        ? localRelative
+        : upath.relative(remoteContext, fsPath));
 
       // skip root
       return relativePath !== '' && ignore.ignores(relativePath);

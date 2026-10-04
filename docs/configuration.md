@@ -302,6 +302,8 @@ Upload temp file on every save operation of VSCode to avoid breaking a webpage w
 ### ignore
 Ignore can be used to ignore files and folders from sync, and even supports wildcards using `*`. <br>
 This is the same behavior as gitignore, all paths relative to context of the current configuration.
+
+`.vscode/sftp.json` is always excluded because it may contain connection credentials, including configurations in nested folders. An empty ignore list, a negated pattern, or Force Upload cannot enable uploading these files. Other `.vscode` files follow your configured ignore patterns.
  
 | Key | Value | Default |
 | --- | --- | --- |
