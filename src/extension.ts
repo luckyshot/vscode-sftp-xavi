@@ -11,6 +11,7 @@ import { getAllFileService, createFileService, disposeFileService } from './modu
 import { getWorkspaceFolders, setContextValue } from './host';
 import RemoteExplorer from './modules/remoteExplorer';
 import { configureHostKeyVerification } from './core/hostKeyVerifier';
+import { removeAllDiffTmpFiles } from './fileHandlers/diff';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -69,5 +70,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
   fileActivityMonitor.destory();
+  removeAllDiffTmpFiles();
   getAllFileService().forEach(disposeFileService);
 }

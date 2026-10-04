@@ -28,6 +28,10 @@ export function onDidOpenTextDocument(listener: (e: vscode.TextDocument) => any,
   return vscode.workspace.onDidOpenTextDocument(listener, thisArgs);
 }
 
+export function onDidCloseTextDocument(listener: (e: vscode.TextDocument) => any, thisArgs?: any) {
+  return vscode.workspace.onDidCloseTextDocument(listener, thisArgs);
+}
+
 export function pathRelativeToWorkspace(localPath) {
   return vscode.workspace.asRelativePath(localPath);
 }
