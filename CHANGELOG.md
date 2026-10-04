@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Fix keyboard-interactive login adding the prompted answers to the `interactiveAuth` array from `sftp.json`, which changed the connection identity and left stale answers for later connections.
 * Fix **Upload Changed Files** renaming files on the server: it used local paths and renamed in the wrong direction. It now renames the remote counterpart of the old file to the remote counterpart of the new one.
 * Sync with `delete` enabled now lists what it is about to delete and asks for confirmation before removing anything, and removes files only after the whole folder has been scanned. Cancelling now also stops the scan of a big folder, and the progress notification covers the scan (shown after one second) as well as the transfer.
 * Connecting to an FTP server without `secure` set now shows a warning, once per server per session, that the password and files travel unencrypted.

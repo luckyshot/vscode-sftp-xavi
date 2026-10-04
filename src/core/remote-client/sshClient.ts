@@ -227,8 +227,10 @@ export default class SSHClient extends RemoteClient {
           finish,
           stackedAnswers
         ) {
+          // Copy the configured answers: pushing prompted ones onto the config array
+          // would change the connection identity and leak into later connections.
           const answers = stackedAnswers ||
-            (Array.isArray(interactiveAuth) ? interactiveAuth : undefined) || [];
+            (Array.isArray(interactiveAuth) ? [...interactiveAuth] : []);
           if (answers.length < prompts.length) {
             config.askForPasswd(`[${option.host}]: ${prompts[answers.length].prompt}`)
               .then(answer => {
