@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
+import mapConcurrent from '../mapConcurrent';
 import FileSystem, { FileEntry, FileStats, FileOption } from './fileSystem';
 
 export default class LocalFileSystem extends FileSystem {
@@ -157,14 +158,10 @@ export default class LocalFileSystem extends FileSystem {
           return;
         }
 
-        const fileStatus = files.map(file => {
+        resolve(mapConcurrent(files, 16, async file => {
           const fspath = this.pathResolver.join(dir, file);
-          return this.lstat(fspath).then(stat =>
-            this.toFileEntry(fspath, stat)
-          );
-        });
-
-        resolve(Promise.all(fileStatus));
+          return this.toFileEntry(fspath, await this.lstat(fspath));
+        }));
       });
     });
   }
