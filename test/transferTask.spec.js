@@ -60,3 +60,32 @@ test('atomic-only failures preserve the original without fallback', async () => 
   expect(dst.rename).not.toHaveBeenCalled();
   expect(dst.unlink).not.toHaveBeenCalledWith('/remote/a');
 });
+
+test('cancellation while source-open is pending never opens the destination', async () => {
+  const { Readable } = require('stream');
+  const src = filesystem(), dst = filesystem();
+  let release;
+  src.get.mockImplementation(() => new Promise(resolve => { release = resolve; }));
+  const transfer = task(src, dst), done = transfer.run();
+  const rejected = expect(done).rejects.toMatchObject({ code: 'sftp.stream.interrupt' });
+  await new Promise(resolve => setImmediate(resolve));
+  transfer.cancel();
+  const stream = Readable.from('content');
+  release(stream);
+  await rejected;
+  expect(transfer.isCancelled()).toBe(true);
+  expect(dst.open).not.toHaveBeenCalled();
+  expect(stream.destroyed).toBe(true);
+});
+test('a cancelled task waiting for the same destination never starts reading', async () => {
+  const src = filesystem(), dst = filesystem();
+  let release;
+  dst.put.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  const first = task(src, dst), second = task(src, dst);
+  const firstDone = first.run(), secondDone = second.run();
+  const rejected = expect(secondDone).rejects.toMatchObject({ code: 'sftp.stream.interrupt' });
+  await new Promise(resolve => setImmediate(resolve));
+  second.cancel(); release();
+  await firstDone; await rejected;
+  expect(src.get).toHaveBeenCalledTimes(1);
+});

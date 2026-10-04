@@ -6,6 +6,7 @@ import { FileSystem, FileType } from './fs';
 import { Task } from './scheduler';
 import logger from '../logger';
 import { isProtectedConfigPath } from './ignore';
+import { ERROR_MSG_STREAM_INTERRUPT } from './fs/fileSystem';
 
 let hasWarnedModifedTimePermission = false;
 const fileQueues = new WeakMap<FileSystem, Map<string, { queue: SerialQueue; users: number }>>();
@@ -71,7 +72,7 @@ export default class TransferTask implements Task {
   private readonly _transferDirection: TransferDirection;
   private readonly _TransferOption: TransferOption;
   private _handle: Readable;
-  private _cancelled: boolean;
+  private _cancelled = false;
   // private _fileStatus: FileStatus;
 
   constructor(
@@ -113,6 +114,7 @@ export default class TransferTask implements Task {
   }
 
   async run() {
+    this._checkCancelled();
     const src = this._srcFsPath;
     const target = this._targetFsPath;
     const srcFs = this._srcFs;
@@ -136,6 +138,7 @@ export default class TransferTask implements Task {
             return;
           }
         }
+        this._checkCancelled();
         await fileOperations.transferSymlink(
           src,
           target,
@@ -150,10 +153,13 @@ export default class TransferTask implements Task {
   }
 
   cancel() {
-    if (this._handle && !this._cancelled) {
-      this._cancelled = true;
-      FileSystem.abortReadableStream(this._handle);
-    }
+    if (this._cancelled) return;
+    this._cancelled = true;
+    if (this._handle && !this._handle.destroyed) FileSystem.abortReadableStream(this._handle);
+  }
+
+  private _checkCancelled() {
+    if (this._cancelled) throw Object.assign(new Error('Transfer Aborted'), { code: ERROR_MSG_STREAM_INTERRUPT });
   }
 
   isCancelled(): boolean {
@@ -161,6 +167,7 @@ export default class TransferTask implements Task {
   }
 
   private async _transferFile() {
+    this._checkCancelled();
     const src = this._srcFsPath;
     const target = this._targetFsPath;
     const srcFs = this._srcFs;
@@ -186,11 +193,14 @@ export default class TransferTask implements Task {
       if (sourceStat.type !== FileType.File) throw new Error(`Source changed type before transfer: ${src}`);
       this._handle = await srcFs.get(src);
       this._handle.on('error', onSourceError);
+      this._checkCancelled();
       if (mode === undefined && perserveTargetMode) {
         mode = await targetFs.lstat(target).then(stat => stat.mode).catch(() => fallbackMode);
       }
+      this._checkCancelled();
       if (sourceError) throw sourceError;
       uploadFd = await targetFs.open(uploadTarget, useTempFile ? 'wx' : 'w');
+      this._checkCancelled();
       if (sourceError) throw sourceError;
       if (useTempFile) {
         logger.info("uploading temp file: " + uploadTarget);
@@ -219,6 +229,7 @@ export default class TransferTask implements Task {
 
       await targetFs.close(uploadFd);
       uploadFd = undefined;
+      this._checkCancelled();
       if (useTempFile) {
         await replaceUploadedFile(targetFs, uploadTarget, target, !!openSsh);
       }
