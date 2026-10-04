@@ -36,6 +36,12 @@
   ],
   "icon": "resources/icon.png",
   "main": "./dist/extension",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "SFTP Xavi connects to servers and runs commands from .vscode/sftp.json, which a repository can supply. Trust the workspace before using it."
+    }
+  },
   "contributes": {
     "viewsContainers": {
       "activitybar": [

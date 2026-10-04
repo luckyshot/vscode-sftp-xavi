@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* The extension no longer runs in untrusted workspaces. A cloned repository can supply its own `.vscode/sftp.json`, so connecting to its server, upload on save, and `sshCustomParams` now wait until you trust the workspace.
+
 ## 2.2.0 - 2026-10-04
 
 * Transfers of 5 or more files (folder uploads, downloads and syncs) show a progress notification with a file count and a Cancel button. While a transfer runs, clicking the SFTP Xavi status bar item cancels it.
