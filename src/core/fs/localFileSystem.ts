@@ -45,7 +45,22 @@ export default class LocalFileSystem extends FileSystem {
     });
   }
 
-  open(path: string, flags: string, mode?: number): Promise<number> {
+  async open(path: string, flags: string, mode?: number): Promise<number> {
+    // Downloads must never write through a symlink that already sits at the destination:
+    // a remote server could have planted one earlier. ('wx' already refuses existing entries.)
+    if (flags === 'w' && fs.constants.O_NOFOLLOW) {
+      const { O_WRONLY, O_CREAT, O_TRUNC, O_NOFOLLOW } = fs.constants;
+      try {
+        return await fse.open(path, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, mode);
+      } catch (error) {
+        if (error.code === 'ELOOP') {
+          throw Object.assign(new Error(`Refusing to write through symbolic link ${path}`), {
+            code: 'ELOOP',
+          });
+        }
+        throw error;
+      }
+    }
     return fse.open(path, flags, mode);
   }
 
