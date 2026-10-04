@@ -1,6 +1,6 @@
 # SFTP Xavi configuration
 
-Project connection settings live in `.vscode/sftp.json`. Run **SFTP Xavi: Config** to create the file. Existing files from the original extension remain compatible.
+Project connection settings live in `.vscode/sftp.json`. Run **SFTP Xavi: Config** to create the file. Existing files from the original extension remain compatible. The file may contain `//` and `/* */` comments and trailing commas.
 
 ## Quick start
 

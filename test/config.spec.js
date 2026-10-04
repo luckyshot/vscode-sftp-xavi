@@ -37,3 +37,14 @@ test.each([
 ])('rejects invalid settings %j', overrides => {
   expect(validateConfig({ ...base, ...overrides })).toBeDefined();
 });
+
+const { parseConfigText } = require('../src/modules/config');
+
+test('parses sftp.json with comments and trailing commas', () => {
+  const text = '{\n // note\n "host": "h", /* inline */\n "ignore": ["a",],\n}';
+  expect(parseConfigText(text)).toEqual({ host: 'h', ignore: ['a'] });
+});
+
+test('reports a syntax error with its line', () => {
+  expect(() => parseConfigText('{\n"host": }')).toThrow(/line 2/);
+});

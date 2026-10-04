@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* `.vscode/sftp.json` now accepts comments and trailing commas (JSONC). **SFTP Xavi: Config** creates a commented template, and the file opens in JSONC mode without editor warnings.
+
 ## 2.1.0 - 2026-10-04
 
 First published release of the fork, available as a VSIX on the GitHub releases page. It includes everything listed under 2.0.0 to 2.0.2 below, which were never published separately.

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fse from 'fs-extra';
 import * as path from 'path';
 import Joi from 'joi';
+import { parse, printParseErrorCode, ParseError } from 'jsonc-parser';
 import { CONFIG_PATH } from '../constants';
 import { reportError } from '../helper';
 import { showTextDocument } from '../host';
@@ -137,8 +138,21 @@ export function validateConfig(config) {
   return error;
 }
 
+// sftp.json accepts comments and trailing commas (JSONC), like other .vscode files.
+export function parseConfigText(text: string, configPath = CONFIG_PATH) {
+  const errors: ParseError[] = [];
+  const config = parse(text, errors, { allowTrailingComma: true });
+  if (errors.length > 0) {
+    const { error, offset } = errors[0];
+    const line = text.slice(0, offset).split('\n').length;
+    throw new SyntaxError(`${configPath}: ${printParseErrorCode(error)} at line ${line}`);
+  }
+  return config;
+}
+
 export function readConfigsFromFile(configPath): Promise<any[]> {
-  return fse.readJson(configPath).then(config => {
+  return fse.readFile(configPath, 'utf8').then(text => {
+    const config = parseConfigText(text.replace(/^\uFEFF/, ''), configPath);
     const configs = Array.isArray(config) ? config : [config];
     return configs.map(mergedDefault);
   });
@@ -166,6 +180,32 @@ export function tryLoadConfigs(workspace): Promise<any[]> {
 //   return normalizeConfig(config);
 // }
 
+const CONFIG_TEMPLATE = `{
+    // Name shown in the Remote Explorer and profile picker.
+    "name": "My Server",
+
+    // Connection. protocol: "sftp", "ftp" or "local".
+    "protocol": "sftp",
+    "host": "localhost",
+    "port": 22,
+    "username": "username",
+    // Omit "password" to be prompted. Or authenticate with a key instead:
+    // "privateKeyPath": "~/.ssh/id_rsa",
+    // Do not commit passwords: .vscode/sftp.json is often tracked by git.
+
+    // Remote folder that maps to this project's root.
+    "remotePath": "/",
+
+    // Upload files automatically when you save them.
+    "uploadOnSave": false,
+    "useTempFile": false,
+    "openSsh": false
+
+    // More options (ignore, watcher, profiles, ...):
+    // https://github.com/luckyshot/vscode-sftp-xavi/blob/develop/docs/configuration.md
+}
+`;
+
 export function newConfig(basePath) {
   const configPath = getConfigPath(basePath);
 
@@ -177,21 +217,7 @@ export function newConfig(basePath) {
       }
 
       return fse
-        .outputJson(
-          configPath,
-          {
-            name: 'My Server',
-            host: 'localhost',
-            protocol: 'sftp',
-            port: 22,
-            username: 'username',
-            remotePath: '/',
-            uploadOnSave: false,
-            useTempFile: false,
-            openSsh: false,
-          },
-          { spaces: 4 }
-        )
+        .outputFile(configPath, CONFIG_TEMPLATE)
         .then(() => showTextDocument(vscode.Uri.file(configPath)));
     })
     .catch(reportError);
