@@ -242,7 +242,7 @@ async function _sync(
     }));
 
     const file2trans: [string, string, TransferDirection, InternalTransferOption][] = [];
-    const dir2trans: [string, string][] = [];
+    const dir2trans: [string, string, TransferDirection][] = [];
     const dir2sync: [string, string][] = [];
 
     const fileMissed: string[] = [];
@@ -312,7 +312,7 @@ async function _sync(
       const fspath = targetFs.pathResolver.join(targetFsPath, srcFile.name);
       switch (srcFile.type) {
         case FileType.Directory:
-          dir2trans.push([srcFile.fspath, fspath]);
+          dir2trans.push([srcFile.fspath, fspath, transferDirection]);
           break;
         case FileType.File:
         case FileType.SymbolicLink:
@@ -341,7 +341,7 @@ async function _sync(
           const fspath = srcFs.pathResolver.join(srcFsPath, file.name);
           switch (file.type) {
             case FileType.Directory:
-              dir2trans.push([file.fspath, fspath]);
+              dir2trans.push([file.fspath, fspath, altDirection]);
               break;
             case FileType.File:
             case FileType.SymbolicLink:
@@ -386,11 +386,17 @@ async function _sync(
       ...dirMissed.map(file => removeFile(file, targetFs, FileType.Directory, transferOption)),
     ]);
 
+    const directedConfig = (direction: TransferDirection) => ({
+      ...config,
+      transferDirection: direction,
+      srcFs: direction === transferDirection ? srcFs : targetFs,
+      targetFs: direction === transferDirection ? targetFs : srcFs,
+    });
+
     const transFilePromise = file2trans.map(([src, target, direction, option]) =>
       transferFile(
         {
-          ...config,
-          transferDirection: direction,
+          ...directedConfig(direction),
           transferOption: option,
           srcFsPath: src,
           targetFsPath: target,
@@ -400,10 +406,10 @@ async function _sync(
       )
     );
 
-    const transDirPromise = dir2trans.map(([src, target]) =>
+    const transDirPromise = dir2trans.map(([src, target, direction]) =>
       transferFolder(
         {
-          ...config,
+          ...directedConfig(direction),
           srcFsPath: src,
           targetFsPath: target,
         },
