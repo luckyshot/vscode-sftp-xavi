@@ -31,3 +31,18 @@ test.each(['close', 'end'])('connects without ending early and cleans up on %s',
   expect(end).toHaveBeenCalledTimes(1);
   expect(end.mock.instances[0]).toBe(client._client);
 });
+
+test('always installs host-key verification even if configuration tries to override it', async () => {
+  const connect = jest.spyOn(Client.prototype, 'connect').mockImplementation(function () { queueMicrotask(() => this.emit('ready')); return this; });
+  jest.spyOn(Client.prototype, 'sftp').mockImplementation(cb => cb(null, {}));
+  const { createHash } = require('crypto');
+  const key = Buffer.from('server-key');
+  const hostFingerprint = `SHA256:${createHash('sha256').update(key).digest('base64').replace(/=+$/, '')}`;
+  const override = jest.fn(() => true);
+  await new SSHClient(options).connect({ ...options, hostFingerprint, hostVerifier: override }, { askForPasswd: jest.fn() });
+  const verifier = connect.mock.calls[0][0].hostVerifier;
+  expect(verifier).not.toBe(override);
+  const check = buffer => new Promise(resolve => verifier(buffer, resolve));
+  expect(await check(key)).toBe(true);
+  expect(await check(Buffer.from('attacker'))).toBe(false);
+});

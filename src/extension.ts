@@ -10,6 +10,7 @@ import { tryLoadConfigs } from './modules/config';
 import { getAllFileService, createFileService, disposeFileService } from './modules/serviceManager';
 import { getWorkspaceFolders, setContextValue } from './host';
 import RemoteExplorer from './modules/remoteExplorer';
+import { configureHostKeyVerification } from './core/hostKeyVerifier';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -28,6 +29,13 @@ function setup(workspaceFolders: readonly vscode.WorkspaceFolder[]) {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+  configureHostKeyVerification(context.globalState, async (host, port, fingerprint) => {
+    const answer = await vscode.window.showWarningMessage(
+      `Trust SSH server ${host}:${port}? Verify its fingerprint with your server administrator: ${fingerprint}`,
+      { modal: true }, 'Trust Server'
+    );
+    return answer === 'Trust Server';
+  });
   try {
     initCommands(context);
   } catch (error) {

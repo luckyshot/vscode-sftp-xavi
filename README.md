@@ -290,3 +290,7 @@ You can see all the Frequently Asked Questions [here](./FAQ.md).
 This project retains the original authors' copyright and license notices. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md) for attribution to Natizyskunk, liximomo, and the upstream contributors.
 
 If you would like to support the original maintainer's work, you can [buy Natizyskunk a coffee](https://www.buymeacoffee.com/Natizyskunk).
+
+### SSH server verification
+
+SFTP verifies the server host key before authentication, including each jump host. The first connection asks you to verify and trust the displayed SHA256 fingerprint; accepted keys are stored in VS Code's extension global state. Changed keys are rejected. You can set `hostFingerprint` to an independently verified fingerprint such as `SHA256:...` in the server, profile, or hop configuration. When a server intentionally rotates its key, update this pin after verifying it with your administrator. Terminal connections use OpenSSH's own host-key verification.

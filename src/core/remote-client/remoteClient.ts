@@ -10,6 +10,7 @@ export interface ConnectOption {
   debug(x: string): void;
 
   // ssh-only
+  hostFingerprint?: string;
   privateKeyPath?: string;
   privateKey?: string;
   passphrase?: string | boolean;

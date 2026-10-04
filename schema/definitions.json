@@ -292,6 +292,11 @@
           }
         }
       },
+      "hostFingerprint": {
+        "type": "string",
+        "pattern": "^SHA256:[A-Za-z0-9+/]{43}$",
+        "description": "Expected SHA256 SSH host-key fingerprint. Mismatches are rejected, including jump hosts."
+      },
       "sshConfigPath": {
         "type": "string",
         "description": "Absolute path to your SSH configuration file (eg. ~/.ssh/config)"

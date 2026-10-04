@@ -65,6 +65,7 @@ interface WatcherConfig {
 }
 
 interface SftpOption {
+  hostFingerprint?: string;
   // sftp
   agent?: string;
   privateKeyPath?: string;

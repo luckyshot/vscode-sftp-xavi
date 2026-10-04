@@ -29,6 +29,7 @@ const configScheme = {
       .items(Joi.string()),
   ).optional(),
   algorithms: Joi.any(),
+  hostFingerprint: Joi.string().pattern(/^SHA256:[A-Za-z0-9+/]{43}$/),
   sshConfigPath: Joi.string(),
   sshCustomParams: Joi.string(),
 
