@@ -1,6 +1,14 @@
-# VS Code SFTP Xavi
+# SFTP Xavi
+
+![SFTP Xavi icon](resources/icon.png)
+
+An independently maintained file synchronization extension for Visual Studio Code.
 
 Sync local projects with remote servers over SFTP and FTP, browse remote files, compare changes, and upload on save. Maintained by [Xavi Esteve](https://github.com/luckyshot), this fork builds on the work of Natizyskunk, liximomo, and their contributors with bug fixes, modern tooling, and ongoing development.
+
+**Independent fork:** SFTP Xavi is not affiliated with or endorsed by Natizyskunk, liximomo, Microsoft, or the Visual Studio Code team. Upstream authors retain credit for their work.
+
+The first independent release is **2.0.0**, currently marked as a preview while broader live-server testing is pending. See the [fork release history](CHANGELOG.md).
 
 - [Source code](https://github.com/luckyshot/vscode-sftp-xavi)
 - [Issues and feature requests](https://github.com/luckyshot/vscode-sftp-xavi/issues)
@@ -17,7 +25,7 @@ Sync local projects with remote servers over SFTP and FTP, browse remote files, 
   - Multiple configurations
   - Switchable profiles
   - Temp File support
-- [Commands](https://github.com/Natizyskunk/vscode-sftp/wiki/Commands)
+- [Commands](docs/commands.md)
 - [Debug](#debug)
 - [FAQ](#FAQ)
 
@@ -28,24 +36,23 @@ Requires VS Code 1.100 or newer. Build a local VSIX with `npm ci && npm run pack
 1. Disable or uninstall the original SFTP extension and any other SFTP fork that uploads on save. Running both on the same workspace can perform duplicate transfers.
 2. Open the Command Palette and select **Extensions: Install from VSIX**.
 3. Choose the `sftp-xavi-*.vsix` file and reload VS Code.
-4. Look for **VS Code SFTP Xavi** in Extensions. Its extension ID is `luckyshot.sftp-xavi`.
+4. Look for **SFTP Xavi** in Extensions. Its extension ID is `luckyshot.sftp-xavi`.
 
 ### Moving from the original extension
 
 Existing `.vscode/sftp.json` configuration files and profiles continue to work. VS Code settings now use `sftpXavi.*`: rename `sftp.debug`, `sftp.printDebugLog`, and `sftp.downloadWhenOpenInRemoteExplorer` in your settings if you use them. Custom command keybindings now use `sftpXavi.*` command IDs instead of `sftp.*`.
 
-Commands appear under **SFTP Xavi**, remote files open with the `sftp-xavi` URI scheme, and logs appear in the **VS Code SFTP Xavi** output channel. Reopen any remote editor tabs left over from the original extension.
+Commands appear under **SFTP Xavi**, remote files open with the `sftp-xavi` URI scheme, and logs appear in the **SFTP Xavi** output channel. Reopen any remote editor tabs left over from the original extension.
 
 ## Documentation
 
-The inherited documentation below describes the original extension. Use **SFTP Xavi** command labels and `sftpXavi.*` VS Code settings in this fork; options inside `sftp.json` retain their existing names.
-
-- [Home](https://github.com/Natizyskunk/vscode-sftp/wiki)
-- [Settings](https://github.com/Natizyskunk/vscode-sftp/wiki/Setting)
-- [Common configuration](https://github.com/Natizyskunk/vscode-sftp/wiki/Common-Configuration)
-- [SFTP configuration](https://github.com/Natizyskunk/vscode-sftp/wiki/SFTP-only-Configuration)
-- [FTP confriguration](https://github.com/Natizyskunk/vscode-sftp/wiki/FTP(s)-only-Configuration)
-- [Commands](https://github.com/Natizyskunk/vscode-sftp/wiki/Commands)
+- [Commands and command IDs](docs/commands.md)
+- [Configuration and settings](docs/configuration.md)
+- [Configuration examples](#example-configurations)
+- [Migration from the original extension](#moving-from-the-original-extension)
+- [Troubleshooting](FAQ.md)
+- [Support and bug reports](SUPPORT.md)
+- [Upstream reference documentation](docs/upstream-references.md)
 
 ## Usage
 If the latest files are already on a remote server, you can start with an empty local folder,
@@ -80,33 +87,16 @@ _Note：_ backslashes and other special characters must be escaped with a backsl
 8. Done - you can now edit locally and after each save it will upload to sync your remote file with the local copy.
 9. Enjoy!
 
-For detailed explanations please go to [wiki](https://github.com/Natizyskunk/vscode-sftp/wiki).
+See the [local configuration guide](docs/configuration.md) for settings and the [command reference](docs/commands.md) for available actions.
 
 ## Example configurations
-You can see the full list of configuration options [here](https://github.com/Natizyskunk/vscode-sftp/wiki/configuration).
+See the [configuration guide](docs/configuration.md) for available options.
 
-- [sftp sync extension for VS Code](#sftp-sync-extension-for-vs-code)
-  - [Installation](#installation)
-    - [Method 1 (Recommended : Auto update)](#method-1-recommended--auto-update)
-    - [Method 2 (Manual update)](#method-2-manual-update)
-  - [Documentation](#documentation)
-  - [Usage](#usage)
-  - [Example configurations](#example-configurations)
-    - [Simple](#simple)
-    - [Profiles](#profiles)
-    - [Multiple Context](#multiple-context)
-    - [Connection Hopping](#connection-hopping)
-      - [Single Hop](#single-hop)
-      - [Multiple Hop](#multiple-hop)
-    - [Configuration in User Setting](#configuration-in-user-setting)
-  - [Remote Explorer](#remote-explorer)
-    - [Multiple Select](#multiple-select)
-    - [Order](#order)
-  - [Debug](#debug)
-  - [FAQ](#faq)
-  - [Donation](#donation)
-    - [Buy Me a Coffee](#buy-me-a-coffee)
-    - [PayPal](#paypal)
+- [Simple](#simple)
+- [Profiles](#profiles)
+- [Multiple contexts](#multiple-context)
+- [Connection hopping](#connection-hopping)
+- [Configuration in user settings](#configuration-in-user-setting)
 
 ### Simple
 ```json
@@ -261,12 +251,10 @@ In sftp.json:
 ```
 
 ## Remote Explorer
-![remote-explorer-preview](https://raw.githubusercontent.com/Natizyskunk/vscode-sftp/master/assets/showcase/remote-explorer.png)
-
 Remote Explorer lets you explore files in remote. You can open Remote Explorer by:
 
-1. Run Command `View: Show VS Code SFTP Xavi`.
-2. Click VS Code SFTP Xavi view in Activity Bar.
+1. Run Command `View: Show SFTP Xavi`.
+2. Click SFTP Xavi view in Activity Bar.
 
 You can only view a files content with Remote Explorer. Run command `SFTP Xavi: Edit in Local` to edit it in local.
 
@@ -292,7 +280,7 @@ In sftp.json:
   - On Windows/Linux - `File > Preferences > Settings`
   - On macOS - `Code > Preferences > Settings`
 2. Set `sftpXavi.debug` to `true` and reload vscode.
-3. View the logs in `View > Output > VS Code SFTP Xavi`.
+3. View the logs in `View > Output > SFTP Xavi`.
 
 ## FAQ
 You can see all the Frequently Asked Questions [here](./FAQ.md).

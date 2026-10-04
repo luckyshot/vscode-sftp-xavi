@@ -1,4 +1,4 @@
-# Developing VS Code SFTP Xavi
+# Developing SFTP Xavi
 
 Use Node.js 22.14 or newer and VS Code 1.100 or newer. With nvm, run `nvm use` before installing dependencies.
 

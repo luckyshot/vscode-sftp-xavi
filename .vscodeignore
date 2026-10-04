@@ -12,6 +12,9 @@
 !dist/extension.js.LICENSE.txt
 !package.json
 !README.md
+!FAQ.md
+!SUPPORT.md
+!docs/**/*
 !CHANGELOG.md
 !LICENSE
 !NOTICE.md

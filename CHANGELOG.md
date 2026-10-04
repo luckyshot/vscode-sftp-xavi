@@ -1,5 +1,13 @@
+# SFTP Xavi release history
+
 ## Unreleased
-* Rebrand the fork as VS Code SFTP Xavi with the separate extension ID `luckyshot.sftp-xavi`, `SFTP Xavi` commands, and `sftpXavi.*` settings. Existing `.vscode/sftp.json` files remain compatible. Preserve upstream attribution in LICENSE, NOTICE.md, and historical credits.
+
+## 2.0.0 - 2026-10-04
+
+First independent fork release, marked as a preview.
+
+* Use the SFTP Xavi name, original orange icon, independent support documentation, and an explicit non-affiliation statement.
+* Rebrand the fork as SFTP Xavi with the separate extension ID `luckyshot.sftp-xavi`, `SFTP Xavi` commands, and `sftpXavi.*` settings. Existing `.vscode/sftp.json` files remain compatible. Preserve upstream attribution in LICENSE, NOTICE.md, and historical credits.
 * Require VS Code 1.100 or newer; development tools require Node.js 22.14 or newer.
 * Modernize TypeScript, webpack, Jest and ESLint; upgrade configuration, filesystem, ignore and cache libraries and remove unused dependencies.
 * Simplify serialized FTP operations, update development and CI workflows, and exclude duplicate bundled libraries from the extension package.
@@ -7,6 +15,10 @@
 * Fix ignore rules for Windows drive/UNC casing and overlapping local/remote path prefixes. Upload Changed Files now excludes ignored changes from its actions and summary, waits for transfers, and catches asynchronous failures (upstream #577).
 * Fix upload-on-save losing its configuration when Windows drive/UNC casing or a symlink differs from the workspace path (upstream #363, #397, #589). Map local paths without synchronous realpath calls or treating path strings as URIs.
 * Fix SFTP downloads, diffs and timestamp serialization on modern VS Code runtimes by upgrading ssh2 to 1.17.0 (upstream #586, #588, #590).
+
+## Upstream release history
+
+The following entries document Natizyskunk and liximomo releases inherited by this fork. Contributor credits and historical links are retained; these are not SFTP Xavi releases.
 
 ## 1.16.3 - 2023-06-16
 * [#356] New Feature : Upload to all profiles (Pull request [#313](https://github.com/Natizyskunk/vscode-sftp/pull/313) from @wewawa vscode-sftp:create_multi_command).

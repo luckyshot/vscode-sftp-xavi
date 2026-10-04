@@ -1,6 +1,6 @@
 # Third-party notices
 
-License texts for runtime dependencies used by VS Code SFTP Xavi, including libraries bundled into the extension.
+License texts for runtime dependencies used by SFTP Xavi, including libraries bundled into the extension.
 
 ## @hapi/address 5.1.1
 

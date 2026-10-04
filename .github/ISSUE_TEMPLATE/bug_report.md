@@ -37,4 +37,4 @@ If applicable, add screenshots to help explain your problem.
       * On Windows/Linux - File > Preferences > Settings
       * On macOS - Code > Preferences > Settings
   2. Set `sftpXavi.debug` to `true` and reload vscode.
-  3. Reproduce the problem, get the logs from View > Output > VS Code SFTP Xavi.
+  3. Reproduce the problem, get the logs from View > Output > SFTP Xavi.

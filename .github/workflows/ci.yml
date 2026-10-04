@@ -25,7 +25,7 @@ jobs:
       - run: npm audit --audit-level=moderate
       - name: Package extension
         if: matrix.node == 24
-        run: npm run package -- --out sftp-xavi.vsix
+        run: npm run package -- --githubBranch "${{ github.sha }}" --out sftp-xavi.vsix
       - name: Save extension package
         if: matrix.node == 24
         uses: actions/upload-artifact@v7

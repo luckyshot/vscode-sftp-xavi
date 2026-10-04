@@ -1,9 +1,120 @@
-# VSCode-SFTP
+# SFTP Xavi configuration
 
-Configurations are stored in your project working directory under `../.vscode/sftp.json`. <br>
-The configuration file can always be accessed with `CTRL` + `Shift` + `P`, and searching for `SFTP: Config`.
+Project connection settings live in `.vscode/sftp.json`. Run **SFTP Xavi: Config** to create the file. Existing files from the original extension remain compatible.
 
-![image](https://github.com/user-attachments/assets/5ceff350-7678-4264-98d4-2741a98a9dbe)
+## Quick start
+
+```json
+{
+  "name": "My server",
+  "protocol": "sftp",
+  "host": "example.com",
+  "port": 22,
+  "username": "my-user",
+  "remotePath": "/srv/www/site",
+  "uploadOnSave": false,
+  "ignore": ["**/.git/**", "**/node_modules/**"]
+}
+```
+
+Leave `password` out to be prompted when connecting, or configure `privateKeyPath` for SSH key authentication. Keep upload on save disabled until your local folder and remote target are correct. You can use **Download Project** to initialize a local folder from the server.
+
+Do not commit credentials. SFTP Xavi excludes `.vscode/sftp.json` from uploads, including Force Upload.
+
+## VS Code settings
+
+These settings belong in editor or workspace settings, rather than `sftp.json`:
+
+| Setting | Default | Behavior |
+| --- | --- | --- |
+| `sftpXavi.debug` | `false` | Write debug logs to the SFTP Xavi output channel; reload after changing. |
+| `sftpXavi.printDebugLog` | `false` | Alternative debug-log switch; reload after changing. |
+| `sftpXavi.downloadWhenOpenInRemoteExplorer` | `false` | Download a remote file instead of opening its read-only remote view. |
+
+When migrating, rename the corresponding `sftp.*` editor settings to `sftpXavi.*`. Connection option names inside `.vscode/sftp.json` do not change.
+
+## Connection options
+
+`host`, `username`, and `remotePath` identify the server account and target. SFTP is the default protocol and normally uses port 22; FTP normally uses port 21. `uploadOnSave`, `downloadOnOpen`, and `useTempFile` default to disabled. The default transfer concurrency is 4.
+
+The following option reference is derived from the project's inherited JSON schemas. A server may not support every protocol-specific feature. Profiles can override connection and transfer options; `context` and `watcher` belong at the top level. Examples of profiles, multiple contexts, and SSH hopping are in the [README](../README.md#example-configurations).
+
+
+### rootOption options
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `name` | string | A string to identify your config. |
+| `context` | string | Relative path relative to the workspace root folder. |
+| `watcher` | object | Watch external modification. |
+| `defaultProfile` | string | Profile name you want to set as default. |
+
+### option options
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `remote` | string | Name of remote which configs with `remoteFs.remote` in User Setting. Configuration will get merged to this remote. |
+| `uploadOnSave` | boolean | True to upload on every save operation of VS Code. |
+| `useTempFile` | boolean | True to upload temp file on every save operation of VS Code to avoid breaking a webpage when a user acceses it while the file is still being uploaded (is incomplete). |
+| `openSsh` | boolean | True to enable atomic file uploads (only supported by openSSH servers). if true, `useTempFile` must also be set to true. |
+| `downloadOnOpen` | mixed | True to download when a file opens. |
+| `syncOption` | object | Configuration the behavior of `Sync` command. |
+| `ignore` | array | Files to ignore. Same behavior as gitignore. |
+| `ignoreFile` | string | Absolute path to the ignore file or Relative path relative to the workspace root folder. |
+| `remoteExplorer` | object | Remote Explorer Setting. |
+| `remoteTimeOffsetInHours` | number | The number of hours difference between the local machine and remote/server. (remote minus local) |
+| `limitOpenFilesOnRemote` | mixed | Limit the open file descriptors to the specific number in a remote server. Set to true for using default limit(222). Do not set this unless you have to. |
+
+### host options
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `host` | string | Hostname or IP address of the server. |
+| `port` | number | Port number of the server. |
+| `username` | string | Username for authentication. |
+| `password` | string | Password for password-based user authentication. |
+| `remotePath` | string | The absolute path on remote. |
+| `connectTimeout` | number | How long (in milliseconds) to wait for the connect to complete. |
+
+### sftp options
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `agent` | string | Path to ssh-agent's UNIX socket for ssh-agent-based user authentication.  Windows users: set to 'pageant' for authenticating with Pageant or (actual) path to a cygwin "UNIX socket". |
+| `privateKeyPath` | string | Absolute path to user private key. |
+| `passphrase` | mixed | For an encrypted private key, this is the passphrase string used to decrypt it. Set to true for enable passphrase dialog. This will prevent from using cleartext passphrase in this config. |
+| `interactiveAuth` | mixed | Keyboard interaction authentication mechanism. For example using Google Authentication. |
+| `algorithms` | object | Explicit overrides for the default transport layer algorithms used for the connection. |
+| `sshConfigPath` | string | Absolute path to your SSH configuration file (eg. ~/.ssh/config) |
+| `concurrency` | number | Concurrency number. |
+| `sshCustomParams` | string | Extra parameters append to SSH command using by "Open SSH in Terminal" |
+
+### ftp options
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `secure` | string, boolean | Set to true for both control and data connection encryption, 'control' for control connection encryption only, or 'implicit' for implicitly encrypted control connection (this mode is deprecated in modern times, but usually uses port 990). |
+| `secureOptions` | object | Options to be passed to tls.connect(). Default: (none) |
+
+## Profiles and multiple projects
+
+Set `profiles` to an object of named overrides, then select one with **SFTP Xavi: Set Profile**. `defaultProfile` chooses the initial profile. To configure multiple contexts, use an array of configurations with distinct `context` values. See the [examples](../README.md#profiles).
+
+## SSH configuration and temporary uploads
+
+`sshConfigPath` reads an SSH configuration file; the default is `~/.ssh/config`. Matching host sections can supply connection details. Explicit connection options retain precedence, while `HostName` resolves the configured host alias.
+
+With `useTempFile: true`, uploads use a temporary remote file before replacing the target. Set `openSsh: true` only when the server supports the OpenSSH atomic-rename extension, and also enable `useTempFile`.
+
+## Ignore rules
+
+`ignore` contains Git-style patterns; `ignoreFile` loads additional patterns from a file. Protected SFTP configuration files remain excluded even if patterns explicitly negate them or Force Upload is used.
+
+The schema files in [schema](../schema) provide editor completion. Historical upstream documentation is available separately as [reference material](upstream-references.md).
+
+## Detailed connection reference
+
+The detailed option descriptions below are adapted from the upstream documentation; upstream authors are credited in [NOTICE.md](../NOTICE.md).
 
 ## Table of Contents
 
@@ -169,7 +280,7 @@ Set octal file permissions for new files.
   "filePerm": 644
 }
 ```
- 
+
 ### dirPerm
 Set octal directory permissions for new directories.
 
@@ -184,7 +295,7 @@ Set octal directory permissions for new directories.
 ```
 
 ### uploadOnSave
-Upload on every save operation of VSCode.
+Upload on every save operation of Visual Studio Code.
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -197,7 +308,7 @@ Upload on every save operation of VSCode.
 ```
 
 ### useTempFile
-Upload temp file on every save operation of VSCode to avoid breaking a webpage when a user accesses it while the file is still being uploaded (is incomplete).
+Upload temp file on every save operation of Visual Studio Code to avoid breaking a webpage when a user accesses it while the file is still being uploaded (is incomplete).
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -287,7 +398,7 @@ Update the destination only if a newer version is on the source filesystem.
 ```
 
 ### useTempFile
-Upload temp file on every save operation of VSCode to avoid breaking a webpage when a user accesses it while the file is still being uploaded (is incomplete).
+Upload temp file on every save operation of Visual Studio Code to avoid breaking a webpage when a user accesses it while the file is still being uploaded (is incomplete).
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -304,11 +415,11 @@ Ignore can be used to ignore files and folders from sync, and even supports wild
 This is the same behavior as gitignore, all paths relative to context of the current configuration.
 
 `.vscode/sftp.json` is always excluded because it may contain connection credentials, including configurations in nested folders. An empty ignore list, a negated pattern, or Force Upload cannot enable uploading these files. Other `.vscode` files follow your configured ignore patterns.
- 
+
 | Key | Value | Default |
 | --- | --- | --- |
 | *ignore* | *string[]* | `[]` |
- 
+
 ```json
 {
   "ignore": [
@@ -325,11 +436,11 @@ This is the same behavior as gitignore, all paths relative to context of the cur
 
 ### ignoreFile
 Absolute path to the ignore file or Relative path relative to the workspace root folder.
- 
+
 | Key | Value |
 | --- | --- |
 | *ignoreFile* | *string* |
- 
+
 ```json
 {
   "ignoreFile": "/.vscode/sftp.json"
@@ -344,16 +455,16 @@ Configure the behavior of the `watcher` command.
 | *watcher* | *object* | `{}` |
 
 #### watcher.files
-Glob patterns that are watched and when edited outside of the VSCode editor are processed.
+Glob patterns that are watched and when edited outside of the Visual Studio Code editor are processed.
 
 | 💡 Important |
 | :--- |
-| *Set* `uploadOnSave` *to* `false` *when you watch everything.*| 
+| *Set* `uploadOnSave` *to* `false` *when you watch everything.*|
 
 | Key | Value |
 | --- | --- |
 | *watcher.files* | *string* |
- 
+
 #### watcher.autoUpload
 Upload when the file changed.
 
@@ -394,9 +505,9 @@ The number of hours difference between the local machine and the remote server (
 Configure the behavior of the `remoteExplorer` command.
 
 | Key | Value | Default |
-| --- | --- | --- | 
+| --- | --- | --- |
 | *remoteExplorer* | *object* | `{}` |
- 
+
 #### remoteExplorer.filesExclude
 Configure that patterns for excluding files and folders. <br>
 The Remote Explorer decides which files and folders to show or hide based on this setting..
@@ -451,7 +562,7 @@ Set to true for using default `limit(222)`.
 
 | 💡 Important |
 | :--- |
-| *Do not set this unless you have to!* | 
+| *Do not set this unless you have to!* |
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -514,7 +625,7 @@ For example using Google Authentication (multi-factor). Or pass array of predefi
 
 | 💡 Note |
 | :--- |
-| *Requires the server to have keyboard-interactive authentication enabled.* | 
+| *Requires the server to have keyboard-interactive authentication enabled.* |
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -617,7 +728,7 @@ Additional options to be passed to `tls.connect()`.
 
 | 💡 Note |
 | :--- |
-| *See [TLS connect options callback](https://nodejs.org/api/tls.html#tls_tls_connect_options_callback).* | 
+| *See [TLS connect options callback](https://nodejs.org/api/tls.html#tls_tls_connect_options_callback).* |
 
 | Key | Value |
 | --- | --- |
