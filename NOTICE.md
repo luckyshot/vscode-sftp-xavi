@@ -6,4 +6,4 @@ This project is derived from [Natizyskunk/vscode-sftp](https://github.com/Natizy
 
 The inherited copyright and license notices are preserved in [LICENSE](LICENSE). Dependencies retain their own licenses and copyright notices; bundled runtime license texts are included in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-The orange hexagon/X icon and matching remote-explorer glyph were created for SFTP Xavi and are distributed under the project license.
+The file-transfer icon and matching remote-explorer glyph were created for SFTP Xavi and are distributed under the project license.

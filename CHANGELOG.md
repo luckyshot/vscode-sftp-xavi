@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.0.1 - 2026-10-04
+
+* Replace the abstract icon with a document and clear upload/download arrows, with a matching remote-explorer glyph.
+
 ## 2.0.0 - 2026-10-04
 
 First independent fork release, marked as a preview.

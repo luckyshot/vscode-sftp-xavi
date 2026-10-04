@@ -14,7 +14,7 @@ Packaging and local installation are separate from Marketplace publication. This
 
 ## Branding and attribution
 
-Use **SFTP Xavi** as the product name, or **SFTP Xavi for Visual Studio Code** when mentioning the platform in the name. Use the original orange hexagon/X artwork; do not substitute the Microsoft logo or the upstream extension icon. The PNG icon is rendered from `resources/icon.svg`; on macOS it can be regenerated with `sips -s format png resources/icon.svg --out resources/icon.png`.
+Use **SFTP Xavi** as the product name, or **SFTP Xavi for Visual Studio Code** when mentioning the platform in the name. Use the original file-transfer artwork; do not substitute the Microsoft logo or the upstream extension icon. The PNG icon is rendered from `resources/icon.svg`; on macOS it can be regenerated with `sips -s format png resources/icon.svg --out resources/icon.png`.
 
 The README names the upstream projects and makes the lack of affiliation explicit. Preserve LICENSE, NOTICE.md, THIRD_PARTY_NOTICES.md, and historical contributor credits in distributions. Upstream releases are labeled as historical releases in CHANGELOG.md. When updating runtime dependencies, refresh their license texts in THIRD_PARTY_NOTICES.md.
 
