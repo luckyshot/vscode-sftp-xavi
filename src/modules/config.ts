@@ -52,7 +52,8 @@ const configScheme = {
     autoUpload: Joi.boolean(),
     autoDelete: Joi.boolean(),
   },
-  concurrency: Joi.number().integer(),
+  concurrency: Joi.number().integer().min(1),
+  limitOpenFilesOnRemote: Joi.alternatives().try(Joi.boolean(), Joi.number().integer().min(1)),
 
   syncOption: {
     delete: Joi.boolean(),

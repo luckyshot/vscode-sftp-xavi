@@ -6,14 +6,12 @@ import { FileSystem, RemoteFileSystem, SFTPFileSystem } from '../fs';
 import logger from '../../logger';
 import CustomError from '../customError';
 import { verifyHostKey } from '../hostKeyVerifier';
-
-let MAX_OPEN_FD_NUM = 222;
+import limitSftpHandles from '../sftpHandleLimiter';
 
 export default class SSHClient extends RemoteClient {
   private sftp: any;
   private hoppingClients: SSHClient[];
-  private _opendFdNum: number = 0;
-  private _queuedFdRequireCall: Array<(...args: any[]) => any> = [];
+  private stopHandleLimiter?: () => void;
 
   _initClient() {
     return new Client();
@@ -94,10 +92,9 @@ export default class SSHClient extends RemoteClient {
     this.sftp = await this._getSftp(this._client);
 
     if (lastOption.limitOpenFilesOnRemote) {
-      if (typeof lastOption.limitOpenFilesOnRemote !== 'boolean') {
-        MAX_OPEN_FD_NUM = Math.max(127, lastOption.limitOpenFilesOnRemote);
-      }
-      this._limitSftpFileDescriptor();
+      const limit = lastOption.limitOpenFilesOnRemote === true ? 222 : lastOption.limitOpenFilesOnRemote;
+      if (!Number.isInteger(limit) || limit < 1) throw new Error('limitOpenFilesOnRemote must be a positive integer or true');
+      this.stopHandleLimiter = limitSftpHandles(this.sftp, limit);
     }
   }
 
@@ -170,68 +167,6 @@ export default class SSHClient extends RemoteClient {
   //     });
   //   });
   // }
-
-  private _limitSftpFileDescriptor() {
-    if (!this.sftp) {
-      return;
-    }
-
-    const sftp = this.sftp;
-    sftp._stream.open = this._hookCallForRequestFileDescriptor(
-      sftp._stream.open
-    );
-    sftp._stream.opendir = this._hookCallForRequestFileDescriptor(
-      sftp._stream.opendir
-    );
-    sftp._stream.close = this._hookCallForReleaseFileDescriptor(
-      sftp._stream.close
-    );
-  }
-
-  private _hookCallForReleaseFileDescriptor(fn) {
-    const self = this;
-    return function releaseFileDescriptor() {
-      const last = arguments.length - 1;
-      const args = Array.prototype.slice.call(arguments, 0, last);
-      const cb = arguments[last];
-      function wrapped() {
-        // 队列到下一周期执行, 确保 cb 先执行.
-        Promise.resolve().then(() => {
-          if (self._queuedFdRequireCall.length > 0) {
-            const queuedCall = self._queuedFdRequireCall.pop()!;
-            queuedCall();
-          }
-        });
-        self._opendFdNum -= 1;
-        cb.apply(this, arguments);
-      }
-      args.push(wrapped);
-      return fn.apply(this, args);
-    };
-  }
-
-  private _hookCallForRequestFileDescriptor(fn) {
-    const self = this;
-    return function requestFileDescriptor() {
-      const last = arguments.length - 1;
-      const args = Array.prototype.slice.call(arguments, 0, last);
-      const cb = arguments[last];
-      function wrapped() {
-        self._opendFdNum += 1;
-        cb.apply(this, arguments);
-      }
-      args.push(wrapped);
-
-      if (self._opendFdNum >= MAX_OPEN_FD_NUM) {
-        self._queuedFdRequireCall.push(() => {
-          fn.apply(this, args);
-        });
-        return;
-      }
-
-      return fn.apply(this, args);
-    };
-  }
 
   private async _connectSSHClient(
     client,
@@ -359,6 +294,8 @@ export default class SSHClient extends RemoteClient {
   }
 
   end() {
+    this.stopHandleLimiter?.();
+    this.stopHandleLimiter = undefined;
     this._client.end();
 
     if (this.hoppingClients) {
