@@ -13,13 +13,15 @@ class TransferProgress {
   private activeBatches = 0;
   private current = '';
   private scanTimer: ReturnType<typeof setTimeout> | null = null;
+  // True from the moment a notification is requested, before VS Code runs its callback.
+  private shown = false;
   private finish: (() => void) | null = null;
   private report: ((value: { message?: string; increment?: number }) => void) | null = null;
 
   // A whole transfer or sync operation: collecting the files, then transferring them.
   begin() {
     this.operations++;
-    if (!this.finish && !this.scanTimer) {
+    if (!this.shown && !this.scanTimer) {
       this.scanTimer = setTimeout(() => {
         this.scanTimer = null;
         if (this.operations > 0) {
@@ -37,7 +39,7 @@ class TransferProgress {
   batchStart(taskCount: number) {
     this.activeBatches++;
     this.total += taskCount;
-    if (!this.finish && this.total >= MIN_TASKS_FOR_NOTIFICATION) {
+    if (!this.shown && this.total >= MIN_TASKS_FOR_NOTIFICATION) {
       this.open();
     }
     this.update(0);
@@ -70,6 +72,10 @@ class TransferProgress {
   }
 
   private open() {
+    if (this.shown) {
+      return;
+    }
+    this.shown = true;
     vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -78,6 +84,11 @@ class TransferProgress {
       },
       (progress, token) =>
         new Promise<void>(resolve => {
+          if (!this.shown) {
+            // everything finished before VS Code got to run this
+            resolve();
+            return;
+          }
           this.report = progress.report.bind(progress);
           this.finish = resolve;
           token.onCancellationRequested(() => {
@@ -97,6 +108,7 @@ class TransferProgress {
       this.scanTimer = null;
     }
     const finish = this.finish;
+    this.shown = false;
     this.finish = null;
     this.report = null;
     this.total = 0;
