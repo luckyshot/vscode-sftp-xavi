@@ -73,6 +73,10 @@ function dirFirstSort(fileA: ExplorerItem, fileB: ExplorerItem) {
   return fileA.isDirectory ? -1 : 1;
 }
 
+function trimTrailingSlash(p: string) {
+  return p.length > 1 ? p.replace(/\/+$/, '') : p;
+}
+
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   const units = ['KB', 'MB', 'GB', 'TB'];
@@ -293,11 +297,15 @@ export default class RemoteTreeData
       throw new Error(`Can't find config for remote resource ${resourceUri}.`);
     }
 
-    if (item.resource.fsPath === root.resource.fsPath) {
+    if (trimTrailingSlash(item.resource.fsPath) === trimTrailingSlash(root.resource.fsPath)) {
       return root;
     }
 
     const fspath = upath.dirname(item.resource.fsPath);
+    // remotePath is often configured with a trailing slash ("/var/www/"), but dirname() drops it
+    if (trimTrailingSlash(fspath) === trimTrailingSlash(root.resource.fsPath)) {
+      return root;
+    }
     const newResource = UResource.updateResource(item.resource, {
       remotePath: fspath,
     });
