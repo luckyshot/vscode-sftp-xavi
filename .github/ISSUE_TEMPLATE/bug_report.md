@@ -9,7 +9,7 @@ assignees: ''
 
 **Do you read the FAQ?**
 - [ ] Yes.
-- [ ] [I am going to read now.](https://github.com/Natizyskunk/vscode-sftp/blob/master/FAQ.md)
+- [ ] [I am going to read now.](https://github.com/luckyshot/vscode-sftp-xavi/blob/develop/FAQ.md)
 
 **Describe the bug**
 A clear and concise description of what the bug is.
@@ -36,5 +36,5 @@ If applicable, add screenshots to help explain your problem.
 
       * On Windows/Linux - File > Preferences > Settings
       * On macOS - Code > Preferences > Settings
-  2. Set `sftp.debug` to `true` and reload vscode.
-  3. Reproduce the problem, get the logs from View > Output > sftp.
+  2. Set `sftpXavi.debug` to `true` and reload vscode.
+  3. Reproduce the problem, get the logs from View > Output > SFTP Xavi.

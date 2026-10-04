@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { registerCommand } from '../../host';
 import {
+  REMOTE_EXPLORER_VIEW_ID,
   COMMAND_REMOTEEXPLORER_REFRESH,
   COMMAND_REMOTEEXPLORER_REFRESH_ACTIVE_FILE,
   COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
@@ -21,7 +22,7 @@ export default class RemoteExplorer {
       vscode.workspace.registerTextDocumentContentProvider(REMOTE_SCHEME, this._treeDataProvider)
     );
 
-    this._explorerView = vscode.window.createTreeView('remoteExplorer', {
+    this._explorerView = vscode.window.createTreeView(REMOTE_EXPLORER_VIEW_ID, {
       showCollapseAll: true,
       treeDataProvider: this._treeDataProvider,
       canSelectMany: true,
@@ -39,7 +40,7 @@ export default class RemoteExplorer {
       const uri = item.resource.uri;
       const fileService = getFileService(uri);
       if (!fileService) {
-        if (uri.toString(true) == "file:///${command:sftp.sync.remoteToLocal}") {
+        if (uri.toString(true) == "file:///${command:sftpXavi.sync.remoteToLocal}") {
           throw '';
         } else {
           throw new Error(`Config Not Found. (${uri.toString(true)})`);

@@ -1,33 +1,11 @@
-## Setting
+# SFTP Xavi editor settings
 
-There are a handful of settings available for SFTP, and they can be changed:
+Open Visual Studio Code settings and search for **SFTP Xavi**, or edit your settings JSON. The settings belong in editor/workspace settings rather than `.vscode/sftp.json`.
 
-- On Windows/Linux: File --> Preferences --> Settings
-- On macOS: Code --> Preferences --> Settings
-
-### debug
-Adds debugging output to the SFTP output panel. <br>
-You can view the login in `View --> Output --> SFTP`.  Changing this requires VSCode to be reloaded.
-
-| Key | Value | Default |
+| Setting | Default | Description |
 | --- | --- | --- |
-| *debug* | *boolean* | *false* |
+| `sftpXavi.debug` | `false` | Enable logs in **View → Output → SFTP Xavi**. Reload after changing. |
+| `sftpXavi.printDebugLog` | `false` | Alternative debug-log switch. Reload after changing. |
+| `sftpXavi.downloadWhenOpenInRemoteExplorer` | `false` | Download a remote file instead of opening its remote view. |
 
-```json
-{
-  "name": "My Server"
-}
-```
-
-### downloadWhenOpenInRemoteExplorer
-Change the default behavior from `View Content` to `Edit in Local` when opening files in the Remote Explorer.
-
-| Key | Value | Default |
-| --- | --- | --- |
-| *debug* | *boolean* | *false* |
-
-```json
-{
-  "name": "My Server"
-}
-```
+Rename the corresponding `sftp.*` settings when moving from the original extension. Connection configuration remains in `.vscode/sftp.json`; see the [configuration guide](configuration.md).

@@ -1,9 +1,10 @@
-# Home
+# SFTP Xavi documentation
 
-1. [Setting](./setting.md)
-2. [Config](./configuration.md)
-    - [Common](./common_configuration.md)
-    - [SFTP](./sftp_configuration.md)
-    - [FTP(s)](./ftp_configuration.md)
-3. [Commands](./commands.md)
-4. [FAQ](./../FAQ.md)
+Use the [configuration guide](configuration.md), [command reference](commands.md), [editor settings](setting.md), and [support guide](../SUPPORT.md).
+
+## Protocol references
+
+- [Common options](common_configuration.md)
+- [SFTP options](sftp_configuration.md)
+- [FTP options](ftp_configuration.md)
+- [Historical upstream references](upstream-references.md)

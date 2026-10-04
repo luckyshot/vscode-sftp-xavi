@@ -21,4 +21,4 @@ A clear and concise description of what you want to happen.
 A clear and concise description of any alternative solutions or features you've considered.
 
 **Does this project help you?**
-- [x] Yes. SFTP IS AWESOME!
+- [x] Yes. SFTP Xavi helps me.

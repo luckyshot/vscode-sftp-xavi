@@ -1,10 +1,10 @@
 {
-  "name": "sftp",
-  "displayName": "SFTP",
-  "description": "SFTP/FTP sync",
-  "version": "1.16.3",
-  "publisher": "Natizyskunk",
-  "author": "Natizyskunk (https://github.com/Natizyskunk)",
+  "name": "sftp-xavi",
+  "displayName": "SFTP Xavi",
+  "description": "An independently maintained SFTP/FTP sync extension with remote browsing, profiles, and upload on save.",
+  "version": "2.0.2",
+  "publisher": "luckyshot",
+  "author": "Xavi Esteve (https://github.com/luckyshot)",
   "engines": {
     "vscode": "^1.100.0",
     "node": ">=22.14.0"
@@ -25,10 +25,13 @@
     "ftp",
     "sftp",
     "sync",
-    "remote"
+    "remote",
+    "xavi",
+    "upload",
+    "download"
   ],
   "activationEvents": [
-    "onCommand:sftp.config",
+    "onCommand:sftpXavi.config",
     "workspaceContains:.vscode/sftp.json"
   ],
   "icon": "resources/icon.png",
@@ -37,36 +40,36 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "sftp",
-          "title": "SFTP",
+          "id": "sftpXavi",
+          "title": "SFTP Xavi",
           "icon": "resources/remote-explorer.svg"
         }
       ]
     },
     "views": {
-      "sftp": [
+      "sftpXavi": [
         {
-          "id": "remoteExplorer",
-          "name": "Explorer",
-          "when": "sftp.enabled"
+          "id": "sftpXavi.remoteExplorer",
+          "name": "SFTP Xavi Explorer",
+          "when": "sftpXavi.enabled"
         }
       ]
     },
     "configuration": {
       "type": "object",
-      "title": "sftp configuration",
+      "title": "SFTP Xavi",
       "properties": {
-        "sftp.printDebugLog": {
+        "sftpXavi.printDebugLog": {
           "type": "boolean",
           "default": false,
-          "description": "print debug log on sftp output channel.(reload vscode when change this)"
+          "description": "Write debug logs to the SFTP Xavi output channel. Reload VS Code after changing this setting."
         },
-        "sftp.debug": {
+        "sftpXavi.debug": {
           "type": "boolean",
           "default": false,
-          "description": "print debug log on sftp output channel.(reload vscode when change this)"
+          "description": "Write debug logs to the SFTP Xavi output channel. Reload VS Code after changing this setting."
         },
-        "sftp.downloadWhenOpenInRemoteExplorer": {
+        "sftpXavi.downloadWhenOpenInRemoteExplorer": {
           "type": "boolean",
           "default": false,
           "description": "\"Download\" instead of \"View Content\" when open file in Remote Explorer"
@@ -75,219 +78,220 @@
     },
     "commands": [
       {
-        "command": "sftp.config",
+        "command": "sftpXavi.config",
         "title": "Config",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.setProfile",
+        "command": "sftpXavi.setProfile",
         "title": "Set Profile",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.openConnectInTerminal",
+        "command": "sftpXavi.openConnectInTerminal",
         "title": "Open SSH in Terminal",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.cancelAllTransfer",
+        "command": "sftpXavi.cancelAllTransfer",
         "title": "Cancel All Transfers",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.file",
+        "command": "sftpXavi.upload.file",
         "title": "Upload File",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.changedFiles",
+        "command": "sftpXavi.upload.changedFiles",
         "title": "Upload Changed Files",
-        "category": "SFTP",
+        "category": "SFTP Xavi",
         "icon": {
           "light": "resources/light/upload.svg",
           "dark": "resources/dark/upload.svg"
         }
       },
       {
-        "command": "sftp.upload.activeFile",
+        "command": "sftpXavi.upload.activeFile",
         "title": "Upload Active File",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.folder",
+        "command": "sftpXavi.upload.folder",
         "title": "Upload Folder",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.activeFolder",
+        "command": "sftpXavi.upload.activeFolder",
         "title": "Upload Active Folder",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.project",
+        "command": "sftpXavi.upload.project",
         "title": "Upload Project",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.forceUpload",
+        "command": "sftpXavi.forceUpload",
         "title": "Force Upload",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.file.to.allProfiles",
+        "command": "sftpXavi.upload.file.to.allProfiles",
         "title": "Upload File To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.activeFile.to.allProfiles",
+        "command": "sftpXavi.upload.activeFile.to.allProfiles",
         "title": "Upload Active File To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.folder.to.allProfiles",
+        "command": "sftpXavi.upload.folder.to.allProfiles",
         "title": "Upload Folder To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.activeFolder.to.allProfiles",
+        "command": "sftpXavi.upload.activeFolder.to.allProfiles",
         "title": "Upload Active Folder To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.upload.project.to.allProfiles",
+        "command": "sftpXavi.upload.project.to.allProfiles",
         "title": "Upload Project To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.forceUpload.to.allProfiles",
+        "command": "sftpXavi.forceUpload.to.allProfiles",
         "title": "Force Upload To All Profiles",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.download.file",
+        "command": "sftpXavi.download.file",
         "title": "Download File",
-        "category": "SFTP",
+        "category": "SFTP Xavi",
         "icon": {
           "dark": "resources/dark/download-file.svg",
           "light": "resources/light/download-file.svg"
         }
       },
       {
-        "command": "sftp.download.activeFile",
+        "command": "sftpXavi.download.activeFile",
         "title": "Download Active File",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.download.folder",
+        "command": "sftpXavi.download.folder",
         "title": "Download Folder",
-        "category": "SFTP",
+        "category": "SFTP Xavi",
         "icon": {
           "dark": "resources/dark/download-folder.svg",
           "light": "resources/light/download-folder.svg"
         }
       },
       {
-        "command": "sftp.download.activeFolder",
+        "command": "sftpXavi.download.activeFolder",
         "title": "Download Active Folder",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.download.project",
+        "command": "sftpXavi.download.project",
         "title": "Download Project",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.forceDownload",
+        "command": "sftpXavi.forceDownload",
         "title": "Force Download",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.sync.localToRemote",
+        "command": "sftpXavi.sync.localToRemote",
         "title": "Sync Local -> Remote",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.sync.remoteToLocal",
+        "command": "sftpXavi.sync.remoteToLocal",
         "title": "Sync Remote -> Local",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.sync.bothDirections",
+        "command": "sftpXavi.sync.bothDirections",
         "title": "Sync Both Directions",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.diff",
+        "command": "sftpXavi.diff",
         "title": "Diff with Remote",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.diff.activeFile",
+        "command": "sftpXavi.diff.activeFile",
         "title": "Diff Active File with Remote",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.list",
+        "command": "sftpXavi.list",
         "title": "List",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.listActiveFolder",
+        "command": "sftpXavi.listActiveFolder",
         "title": "List Active Folder",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.listAll",
+        "command": "sftpXavi.listAll",
         "title": "List All",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.delete.remote",
+        "command": "sftpXavi.delete.remote",
         "title": "Delete",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.create.folder",
+        "command": "sftpXavi.create.folder",
         "title": "Create Folder",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.create.file",
+        "command": "sftpXavi.create.file",
         "title": "Create File",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.revealInExplorer",
+        "command": "sftpXavi.revealInExplorer",
         "title": "Reveal in Explorer",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.revealInRemoteExplorer",
+        "command": "sftpXavi.revealInRemoteExplorer",
         "title": "Reveal in Remote Explorer",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.remoteExplorer.editInLocal",
+        "command": "sftpXavi.remoteExplorer.editInLocal",
         "title": "Edit in Local",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.viewContent",
+        "command": "sftpXavi.viewContent",
         "title": "View Content",
-        "category": "SFTP"
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.remoteExplorer.refresh",
+        "command": "sftpXavi.remoteExplorer.refresh",
         "title": "Refresh",
         "icon": {
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
-        }
+        },
+        "category": "SFTP Xavi"
       },
       {
-        "command": "sftp.remoteExplorer.refreshActiveFile",
+        "command": "sftpXavi.remoteExplorer.refreshActiveFile",
         "title": "Refresh Active Remote File",
-        "category": "SFTP",
+        "category": "SFTP Xavi",
         "icon": {
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
@@ -297,386 +301,386 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "sftp.setProfile",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.setProfile",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.openConnectInTerminal",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.openConnectInTerminal",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.cancelAllTransfer",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.cancelAllTransfer",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.activeFile",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.upload.activeFile",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.activeFolder",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.upload.activeFolder",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.project",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.upload.project",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.activeFile.to.allProfiles",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.upload.activeFile.to.allProfiles",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.activeFolder.to.allProfiles",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.upload.activeFolder.to.allProfiles",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.project.to.allProfiles",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.upload.project.to.allProfiles",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.download.activeFile",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.download.activeFile",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.download.activeFolder",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.download.activeFolder",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.download.project",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.download.project",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.sync.localToRemote",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.sync.localToRemote",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.sync.remoteToLocal",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.sync.remoteToLocal",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.sync.bothDirections",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.sync.bothDirections",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.diff.activeFile",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.diff.activeFile",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.list",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.list",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.listActiveFolder",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.listActiveFolder",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.listAll",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.listAll",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.file",
+          "command": "sftpXavi.upload.file",
           "when": "false"
         },
         {
-          "command": "sftp.upload.changedFiles",
-          "when": "sftp.enabled"
+          "command": "sftpXavi.upload.changedFiles",
+          "when": "sftpXavi.enabled"
         },
         {
-          "command": "sftp.upload.folder",
+          "command": "sftpXavi.upload.folder",
           "when": "false"
         },
         {
-          "command": "sftp.forceUpload",
+          "command": "sftpXavi.forceUpload",
           "when": "false"
         },
         {
-          "command": "sftp.upload.file.to.allProfiles",
+          "command": "sftpXavi.upload.file.to.allProfiles",
           "when": "false"
         },
         {
-          "command": "sftp.upload.folder.to.allProfiles",
+          "command": "sftpXavi.upload.folder.to.allProfiles",
           "when": "false"
         },
         {
-          "command": "sftp.forceUpload.to.allProfiles",
+          "command": "sftpXavi.forceUpload.to.allProfiles",
           "when": "false"
         },
         {
-          "command": "sftp.download.file",
+          "command": "sftpXavi.download.file",
           "when": "false"
         },
         {
-          "command": "sftp.download.folder",
+          "command": "sftpXavi.download.folder",
           "when": "false"
         },
         {
-          "command": "sftp.forceDownload",
+          "command": "sftpXavi.forceDownload",
           "when": "false"
         },
         {
-          "command": "sftp.diff",
+          "command": "sftpXavi.diff",
           "when": "false"
         },
         {
-          "command": "sftp.delete.remote",
+          "command": "sftpXavi.delete.remote",
           "when": "false"
         },
         {
-          "command": "sftp.create.folder",
+          "command": "sftpXavi.create.folder",
           "when": "false"
         },
         {
-          "command": "sftp.create.file",
+          "command": "sftpXavi.create.file",
           "when": "false"
         },
         {
-          "command": "sftp.revealInExplorer",
+          "command": "sftpXavi.revealInExplorer",
           "when": "false"
         },
         {
-          "command": "sftp.revealInRemoteExplorer",
+          "command": "sftpXavi.revealInRemoteExplorer",
           "when": "false"
         },
         {
-          "command": "sftp.remoteExplorer.editInLocal",
+          "command": "sftpXavi.remoteExplorer.editInLocal",
           "when": "false"
         },
         {
-          "command": "sftp.viewContent",
+          "command": "sftpXavi.viewContent",
           "when": "false"
         },
         {
-          "command": "sftp.remoteExplorer.refresh",
+          "command": "sftpXavi.remoteExplorer.refresh",
           "when": "false"
         }
       ],
       "explorer/context": [
         {
-          "command": "sftp.revealInRemoteExplorer",
+          "command": "sftpXavi.revealInRemoteExplorer",
           "group": "navigation@20",
-          "when": "sftp.enabled && !explorerResourceIsRoot"
+          "when": "sftpXavi.enabled && !explorerResourceIsRoot"
         },
         {
-          "command": "sftp.diff",
+          "command": "sftpXavi.diff",
           "group": "3_compare",
-          "when": "sftp.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
+          "when": "sftpXavi.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
         },
         {
-          "command": "sftp.sync.localToRemote",
-          "group": "sftp.sync@1",
-          "when": "sftp.enabled && explorerResourceIsFolder"
+          "command": "sftpXavi.sync.localToRemote",
+          "group": "sftpXavi.sync@1",
+          "when": "sftpXavi.enabled && explorerResourceIsFolder"
         },
         {
-          "command": "sftp.sync.remoteToLocal",
-          "group": "sftp.sync@2",
-          "when": "sftp.enabled && explorerResourceIsFolder"
+          "command": "sftpXavi.sync.remoteToLocal",
+          "group": "sftpXavi.sync@2",
+          "when": "sftpXavi.enabled && explorerResourceIsFolder"
         },
         {
-          "command": "sftp.sync.bothDirections",
-          "group": "sftp.sync@3",
-          "when": "sftp.enabled && explorerResourceIsFolder"
+          "command": "sftpXavi.sync.bothDirections",
+          "group": "sftpXavi.sync@3",
+          "when": "sftpXavi.enabled && explorerResourceIsFolder"
         },
         {
-          "command": "sftp.upload.file",
-          "group": "sftp.trans@1",
-          "when": "sftp.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
+          "command": "sftpXavi.upload.file",
+          "group": "sftpXavi.trans@1",
+          "when": "sftpXavi.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
         },
         {
-          "command": "sftp.upload.folder",
-          "group": "sftp.trans@1",
-          "alt": "sftp.forceUpload",
-          "when": "sftp.enabled && explorerResourceIsFolder"
+          "command": "sftpXavi.upload.folder",
+          "group": "sftpXavi.trans@1",
+          "alt": "sftpXavi.forceUpload",
+          "when": "sftpXavi.enabled && explorerResourceIsFolder"
         },
         {
-          "command": "sftp.upload.file.to.allProfiles",
-          "group": "sftp.trans@1",
-          "when": "sftp.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
+          "command": "sftpXavi.upload.file.to.allProfiles",
+          "group": "sftpXavi.trans@1",
+          "when": "sftpXavi.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
         },
         {
-          "command": "sftp.upload.folder.to.allProfiles",
-          "group": "sftp.trans@1",
-          "alt": "sftp.forceUpload.to.allProfiles",
-          "when": "sftp.enabled && explorerResourceIsFolder"
+          "command": "sftpXavi.upload.folder.to.allProfiles",
+          "group": "sftpXavi.trans@1",
+          "alt": "sftpXavi.forceUpload.to.allProfiles",
+          "when": "sftpXavi.enabled && explorerResourceIsFolder"
         },
         {
-          "command": "sftp.download.file",
-          "group": "sftp.trans@2",
-          "when": "sftp.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
+          "command": "sftpXavi.download.file",
+          "group": "sftpXavi.trans@2",
+          "when": "sftpXavi.enabled && !explorerResourceIsRoot && !explorerResourceIsFolder"
         },
         {
-          "command": "sftp.download.folder",
-          "group": "sftp.trans@2",
-          "alt": "sftp.forceDownload",
-          "when": "sftp.enabled && explorerResourceIsFolder"
+          "command": "sftpXavi.download.folder",
+          "group": "sftpXavi.trans@2",
+          "alt": "sftpXavi.forceDownload",
+          "when": "sftpXavi.enabled && explorerResourceIsFolder"
         }
       ],
       "editor/context": [
         {
-          "command": "sftp.upload.file",
-          "group": "sftp.trans@1",
-          "when": "sftp.enabled && resourceScheme == file"
+          "command": "sftpXavi.upload.file",
+          "group": "sftpXavi.trans@1",
+          "when": "sftpXavi.enabled && resourceScheme == file"
         },
         {
-          "command": "sftp.upload.file.to.allProfiles",
-          "group": "sftp.trans@1",
-          "when": "sftp.enabled && resourceScheme == file"
+          "command": "sftpXavi.upload.file.to.allProfiles",
+          "group": "sftpXavi.trans@1",
+          "when": "sftpXavi.enabled && resourceScheme == file"
         },
         {
-          "command": "sftp.download.file",
-          "group": "sftp.trans@2",
-          "when": "sftp.enabled && resourceScheme == file"
+          "command": "sftpXavi.download.file",
+          "group": "sftpXavi.trans@2",
+          "when": "sftpXavi.enabled && resourceScheme == file"
         },
         {
-          "command": "sftp.diff",
+          "command": "sftpXavi.diff",
           "group": "3_compare",
-          "when": "sftp.enabled && resourceScheme == file"
+          "when": "sftpXavi.enabled && resourceScheme == file"
         },
         {
-          "command": "sftp.remoteExplorer.editInLocal",
+          "command": "sftpXavi.remoteExplorer.editInLocal",
           "group": "2_files",
-          "when": "sftp.enabled && resourceScheme == remote"
+          "when": "sftpXavi.enabled && resourceScheme == sftp-xavi"
         }
       ],
       "editor/title": [
         {
-          "command": "sftp.remoteExplorer.refreshActiveFile",
+          "command": "sftpXavi.remoteExplorer.refreshActiveFile",
           "group": "navigation",
-          "when": "sftp.enabled && resourceScheme == remote"
+          "when": "sftpXavi.enabled && resourceScheme == sftp-xavi"
         }
       ],
       "editor/title/context": [
         {
-          "command": "sftp.revealInExplorer",
+          "command": "sftpXavi.revealInExplorer",
           "group": "2_files",
-          "when": "sftp.enabled && resourceScheme == remote"
+          "when": "sftpXavi.enabled && resourceScheme == sftp-xavi"
         },
         {
-          "command": "sftp.revealInRemoteExplorer",
-          "when": "sftp.enabled && resourceScheme == file",
+          "command": "sftpXavi.revealInRemoteExplorer",
+          "when": "sftpXavi.enabled && resourceScheme == file",
           "group": "2_files"
         }
       ],
       "view/title": [
         {
-          "command": "sftp.remoteExplorer.refresh",
-          "when": "view == remoteExplorer",
+          "command": "sftpXavi.remoteExplorer.refresh",
+          "when": "view == sftpXavi.remoteExplorer",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "sftp.openConnectInTerminal",
+          "command": "sftpXavi.openConnectInTerminal",
           "group": "navigation",
-          "when": "view == remoteExplorer && viewItem == root"
+          "when": "view == sftpXavi.remoteExplorer && viewItem == root"
         },
         {
-          "command": "sftp.remoteExplorer.editInLocal",
+          "command": "sftpXavi.remoteExplorer.editInLocal",
           "group": "2_files",
-          "when": "view == remoteExplorer && viewItem == file && !config.sftp.downloadWhenOpenInRemoteExplorer"
+          "when": "view == sftpXavi.remoteExplorer && viewItem == file && !config.sftpXavi.downloadWhenOpenInRemoteExplorer"
         },
         {
-          "command": "sftp.viewContent",
+          "command": "sftpXavi.viewContent",
           "group": "2_files",
-          "when": "view == remoteExplorer && viewItem == file && config.sftp.downloadWhenOpenInRemoteExplorer"
+          "when": "view == sftpXavi.remoteExplorer && viewItem == file && config.sftpXavi.downloadWhenOpenInRemoteExplorer"
         },
         {
-          "command": "sftp.revealInExplorer",
+          "command": "sftpXavi.revealInExplorer",
           "group": "2_files",
-          "when": "view == remoteExplorer && viewItem != root"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root"
         },
         {
-          "command": "sftp.upload.folder",
+          "command": "sftpXavi.upload.folder",
           "group": "3_trans@1",
-          "alt": "sftp.forceUpload",
-          "when": "sftp.enabled && viewItem != file"
+          "alt": "sftpXavi.forceUpload",
+          "when": "sftpXavi.enabled && viewItem != file"
         },
         {
-          "command": "sftp.upload.file",
+          "command": "sftpXavi.upload.file",
           "group": "3_trans@1",
-          "when": "view == remoteExplorer && viewItem != root && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem == file"
         },
         {
-          "command": "sftp.upload.folder.to.allProfiles",
+          "command": "sftpXavi.upload.folder.to.allProfiles",
           "group": "3_trans@1",
-          "alt": "sftp.forceUpload.to.allProfiles",
-          "when": "sftp.enabled && viewItem != file"
+          "alt": "sftpXavi.forceUpload.to.allProfiles",
+          "when": "sftpXavi.enabled && viewItem != file"
         },
         {
-          "command": "sftp.upload.file.to.allProfiles",
+          "command": "sftpXavi.upload.file.to.allProfiles",
           "group": "3_trans@1",
-          "when": "view == remoteExplorer && viewItem != root && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem == file"
         },
         {
-          "command": "sftp.download.folder",
+          "command": "sftpXavi.download.folder",
           "group": "3_trans@2",
-          "alt": "sftp.forceDownload",
-          "when": "sftp.enabled && viewItem != file"
+          "alt": "sftpXavi.forceDownload",
+          "when": "sftpXavi.enabled && viewItem != file"
         },
         {
-          "command": "sftp.download.file",
+          "command": "sftpXavi.download.file",
           "group": "3_trans@2",
-          "when": "view == remoteExplorer && viewItem != root && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root && viewItem == file"
         },
         {
-          "command": "sftp.delete.remote",
+          "command": "sftpXavi.delete.remote",
           "group": "7_modification",
-          "when": "view == remoteExplorer && viewItem != root"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != root"
         },
         {
-          "command": "sftp.create.folder",
+          "command": "sftpXavi.create.folder",
           "group": "7_modification",
-          "when": "view == remoteExplorer && viewItem != file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != file"
         },
         {
-          "command": "sftp.create.file",
+          "command": "sftpXavi.create.file",
           "group": "7_modification",
-          "when": "view == remoteExplorer && viewItem != file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem != file"
         },
         {
-          "command": "sftp.download.file",
+          "command": "sftpXavi.download.file",
           "group": "inline",
-          "when": "view == remoteExplorer && viewItem == file"
+          "when": "view == sftpXavi.remoteExplorer && viewItem == file"
         },
         {
-          "command": "sftp.download.folder",
+          "command": "sftpXavi.download.folder",
           "group": "inline",
-          "when": "sftp.enabled && view == remoteExplorer && viewItem == folder"
+          "when": "sftpXavi.enabled && view == sftpXavi.remoteExplorer && viewItem == folder"
         }
       ],
       "scm/title": [
         {
-          "command": "sftp.upload.changedFiles",
+          "command": "sftpXavi.upload.changedFiles",
           "group": "sftp",
-          "when": "sftp.enabled && scmProvider == git && !gitFreshRepository"
+          "when": "sftpXavi.enabled && scmProvider == git && !gitFreshRepository"
         }
       ],
       "scm/resourceGroup/context": [
         {
-          "command": "sftp.upload.changedFiles",
+          "command": "sftpXavi.upload.changedFiles",
           "group": "inline",
-          "when": "sftp.enabled && scmProvider == git && scmResourceGroup == workingTree && !gitFreshRepository"
+          "when": "sftpXavi.enabled && scmProvider == git && scmResourceGroup == workingTree && !gitFreshRepository"
         },
         {
-          "command": "sftp.upload.changedFiles",
+          "command": "sftpXavi.upload.changedFiles",
           "group": "sftp",
-          "when": "sftp.enabled && scmProvider == git && scmResourceGroup == workingTree && !gitFreshRepository"
+          "when": "sftpXavi.enabled && scmProvider == git && scmResourceGroup == workingTree && !gitFreshRepository"
         },
         {
-          "command": "sftp.upload.changedFiles",
+          "command": "sftpXavi.upload.changedFiles",
           "group": "inline",
-          "when": "sftp.enabled && scmProvider == git && scmResourceGroup == index && !gitFreshRepository"
+          "when": "sftpXavi.enabled && scmProvider == git && scmResourceGroup == index && !gitFreshRepository"
         },
         {
-          "command": "sftp.upload.changedFiles",
+          "command": "sftpXavi.upload.changedFiles",
           "group": "sftp",
-          "when": "sftp.enabled && scmProvider == git && scmResourceGroup == index && !gitFreshRepository"
+          "when": "sftpXavi.enabled && scmProvider == git && scmResourceGroup == index && !gitFreshRepository"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "sftp.upload.changedFiles",
+        "command": "sftpXavi.upload.changedFiles",
         "key": "ctrl+alt+u",
-        "when": "sftp.enabled"
+        "when": "sftpXavi.enabled"
       }
     ],
     "jsonValidation": [
@@ -687,7 +691,7 @@
     ],
     "resourceLabelFormatters": [
       {
-        "scheme": "remote",
+        "scheme": "sftp-xavi",
         "formatting": {
           "label": "${path}",
           "separator": "/"
@@ -750,5 +754,10 @@
       "<rootDir>/test/**/*.spec.js",
       "<rootDir>/**/*/__tests__/*.ts"
     ]
+  },
+  "preview": true,
+  "galleryBanner": {
+    "color": "#152225",
+    "theme": "dark"
   }
 }

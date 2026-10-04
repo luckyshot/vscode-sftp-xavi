@@ -135,7 +135,7 @@ Set octal directory permissions for new directories.
 ```
 
 ### uploadOnSave
-Upload on every save operation of VSCode.
+Upload on every save operation of Visual Studio Code.
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -148,7 +148,7 @@ Upload on every save operation of VSCode.
 ```
 
 ### useTempFile
-Upload temp file on every save operation of VSCode to avoid breaking a webpage when a user accesses it while the file is still being uploaded (is incomplete).
+Upload temp file on every save operation of Visual Studio Code to avoid breaking a webpage when a user accesses it while the file is still being uploaded (is incomplete).
 
 | Key | Value | Default |
 | --- | --- | --- |
@@ -280,7 +280,7 @@ Configure the behavior of the `watcher` command.
 | *watcher* | *object* | `{}` |
 
 #### watcher.files
-Glob patterns that are watched and when edited outside of the VSCode editor are processed.
+Glob patterns that are watched and when edited outside of the Visual Studio Code editor are processed.
 
 | 💡 Important |
 | :--- |

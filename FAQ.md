@@ -1,3 +1,7 @@
+# SFTP Xavi troubleshooting
+
+This guide retains troubleshooting material from the upstream projects. Some historical workarounds may no longer apply. For current command IDs and settings, use the [configuration guide](docs/configuration.md) and [command reference](docs/commands.md); report new problems to [this fork](SUPPORT.md).
+
 - [Error: Failure](#error-failure)
 	- [Error: Failure - Solution One](#error-failure---solution-one)
 	- [Error: Failure - Solution Two](#error-failure---solution-two)
