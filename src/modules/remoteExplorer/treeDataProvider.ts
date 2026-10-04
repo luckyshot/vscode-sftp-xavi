@@ -40,13 +40,8 @@ const DEFAULT_FILES_EXCLUDE = ['.git', '.svn', '.hg', 'CVS', '.DS_Store'];
  *  This is not break anything because we get fspth from uri.query.'
  */
 function makePreivewUrl(uri: vscode.Uri) {
-  // const query = querystring.parse(uri.query);
-  // query.originPath = uri.path;
-  // query.originQuery = uri.query;
-
   return uri.with({
     path: previewDocumentPathPrefix + upath.basename(uri.path),
-    // query: querystring.stringify(query),
   });
 }
 

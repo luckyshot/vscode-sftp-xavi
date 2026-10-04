@@ -17,10 +17,6 @@ export function toLocalPath(remotePath: string, remoteContext: string, localCont
   return path.join(localContext, upath.relative(remoteContext, remotePath));
 }
 
-export function isSubpathOf(possiableParentPath: string, pathname: string) {
-  return path.normalize(pathname).indexOf(path.normalize(possiableParentPath)) === 0;
-}
-
 export function replaceHomePath(pathname: string) {
   return pathname.substr(0, 2) === '~/' ? path.join(os.homedir(), pathname.slice(2)) : pathname;
 }

@@ -171,15 +171,6 @@ export function tryLoadConfigs(workspace): Promise<any[]> {
   );
 }
 
-// export function getConfig(activityPath: string) {
-//   const config = configTrie.findPrefix(normalizePath(activityPath));
-//   if (!config) {
-//     throw new Error(`(${activityPath}) config file not found`);
-//   }
-
-//   return normalizeConfig(config);
-// }
-
 const CONFIG_TEMPLATE = `{
     // Name shown in the Remote Explorer and profile picker.
     "name": "My Server",

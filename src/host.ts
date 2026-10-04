@@ -44,14 +44,6 @@ export function getWorkspaceFolders() {
   return vscode.workspace.workspaceFolders;
 }
 
-export function refreshExplorer() {
-  return executeCommand('workbench.files.action.refreshFilesExplorer');
-}
-
-export function focusOpenEditors() {
-  return executeCommand('workbench.files.action.focusOpenEditorsView');
-}
-
 export function showTextDocument(uri: vscode.Uri, option?: vscode.TextDocumentShowOptions) {
   return vscode.window.showTextDocument(uri, option);
 }

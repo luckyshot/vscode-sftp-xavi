@@ -109,7 +109,6 @@ export interface WatcherService {
 }
 
 interface TransferScheduler {
-  // readonly _scheduler: Scheduler;
   size: number;
   readonly stopped: boolean;
   add(x: TransferTask): void;
