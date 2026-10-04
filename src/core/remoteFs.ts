@@ -1,4 +1,5 @@
 import upath from './upath';
+import { createHash } from 'crypto';
 import { promptForPassword } from '../host';
 import logger from '../logger';
 import app from '../app';
@@ -11,10 +12,17 @@ import {
 } from './fs';
 import localFs from './localFs';
 
-function hashOption(opiton) {
-  return Object.keys(opiton)
-    .map(key => opiton[key])
-    .join('');
+function canonicalOption(value: any): any {
+  if (Array.isArray(value)) return value.map(canonicalOption);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort().filter(key => value[key] !== undefined)
+      .map(key => [key, canonicalOption(value[key])]));
+  }
+  return value;
+}
+
+export function hashOption(option): string {
+  return createHash('sha256').update(JSON.stringify(canonicalOption(option))).digest('hex');
 }
 
 class KeepAliveRemoteFs {
