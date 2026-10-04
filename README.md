@@ -8,7 +8,7 @@ Sync local projects with remote servers over SFTP and FTP, browse remote files, 
 
 **Independent fork:** SFTP Xavi is not affiliated with or endorsed by Natizyskunk, liximomo, Microsoft, or the Visual Studio Code team. Upstream authors retain credit for their work.
 
-The first independent release is **2.0.0**, currently marked as a preview while broader live-server testing is pending. See the [fork release history](CHANGELOG.md).
+The latest release is **[2.1.0](https://github.com/luckyshot/vscode-sftp-xavi/releases/latest)**, currently marked as a preview while broader live-server testing is pending. See the [fork release history](CHANGELOG.md).
 
 - [Source code](https://github.com/luckyshot/vscode-sftp-xavi)
 - [Issues and feature requests](https://github.com/luckyshot/vscode-sftp-xavi/issues)
@@ -31,12 +31,22 @@ The first independent release is **2.0.0**, currently marked as a preview while 
 
 ## Installation
 
-Requires VS Code 1.100 or newer. Build a local VSIX with `npm ci && npm run package`, or download a VSIX from this fork's releases when one is available.
+SFTP Xavi is not published on the Visual Studio Marketplace. Install it from a VSIX file attached to a GitHub release.
+
+Requires VS Code 1.100 or newer.
 
 1. Disable or uninstall the original SFTP extension and any other SFTP fork that uploads on save. Running both on the same workspace can perform duplicate transfers.
-2. Open the Command Palette and select **Extensions: Install from VSIX**.
-3. Choose the `sftp-xavi-*.vsix` file and reload VS Code.
-4. Look for **SFTP Xavi** in Extensions. Its extension ID is `luckyshot.sftp-xavi`.
+2. Download `sftp-xavi-<version>.vsix` from the [latest release](https://github.com/luckyshot/vscode-sftp-xavi/releases/latest).
+3. Install it, either from a terminal:
+
+   ```bash
+   code --install-extension sftp-xavi-2.1.0.vsix
+   ```
+
+   or in VS Code: open the Command Palette, run **Extensions: Install from VSIX...**, and choose the file.
+4. Reload VS Code. Look for **SFTP Xavi** in Extensions. Its extension ID is `luckyshot.sftp-xavi`.
+
+To update, install the newer VSIX the same way; it replaces the old version. You can also build a VSIX yourself with `npm ci && npm run package`.
 
 ### Moving from the original extension
 
@@ -257,6 +267,24 @@ Remote Explorer lets you explore files in remote. You can open Remote Explorer b
 2. Click SFTP Xavi view in Activity Bar.
 
 You can only view a files content with Remote Explorer. Run command `SFTP Xavi: Edit in Local` to edit it in local.
+
+### Local sync status and compare
+Each remote entry is compared with the local file it maps to:
+
+| Badge | Meaning |
+|---|---|
+| `M` | The file exists on both sides but differs |
+| `R` | The file exists only on the remote |
+| `!` | A file on one side and a folder on the other |
+| greyed out | Matched by your `ignore` rules, so sync commands skip it |
+
+Folders show how many of their loaded entries differ. Files show their size and age, and the tooltip lists both sides' sizes and modified times and which one is newer.
+
+- Click a file that differs, or choose **Compare with Local**, to open a remote ↔ local diff.
+- Choose **Check Whether Content Differs** to compare the actual bytes when size and time are ambiguous. Files larger than `sftpXavi.maxRemotePreviewBytes` are not compared.
+- Uploads rarely keep modified times, so files of the same size whose times differ by at most `sftpXavi.mtimeToleranceSeconds` (default `5`) count as identical. FTP profiles compare by size only.
+
+Status is calculated when a folder is listed and local-only files are not shown. Use the Refresh button after changing files locally.
 
 ### Multiple Select
 You are able to select multiple files/folders at once on the remote server to download and upload. You can do it simply by holding down Ctrl or Shift while selecting all desired files, just like on the regular explorer view.
