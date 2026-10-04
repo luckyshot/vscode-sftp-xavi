@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fse from 'fs-extra';
 import * as path from 'path';
-import * as Joi from 'joi';
+import Joi from 'joi';
 import { CONFIG_PATH } from '../constants';
 import { reportError } from '../helper';
 import { showTextDocument } from '../host';

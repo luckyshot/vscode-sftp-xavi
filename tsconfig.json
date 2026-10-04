@@ -1,29 +1,31 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "target": "es6",
-        "outDir": "out",
-        "lib": [
-            "es6"
-        ],
-        "sourceMap": true,
-        "rootDir": ".",
-        "noUnusedLocals": true,
-        "strictNullChecks": true,
-        "plugins": [
-          {
-            "name": "typescript-tslint-plugin",
-            "alwaysShowRuleFailuresAsWarnings": false,
-            "ignoreDefinitionFiles": true,
-            "suppressWhileTypeErrorsPresent": false,
-            "mockTypeScriptVersion": false,
-            "configFile": "./tslint.json"
-          }
-        ]
-    },
-    "exclude": [
-        "node_modules",
-        ".vscode-test",
-        "test"
-    ]
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "outDir": "out",
+    "rootDir": ".",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "types": [
+      "node",
+      "vscode",
+      "webpack-env",
+      "jest"
+    ],
+    "strict": false
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/helper/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".vscode-test"
+  ]
 }

@@ -541,7 +541,6 @@ export default class FileService {
       this._configValidator && this._configValidator(completeConfig);
     if (error) {
       let errorMsg = `Config validation fail: ${error.message}.`;
-      // tslint:disable-next-line triple-equals
       if (hasProfile && app.state.profile == null) {
         errorMsg += ' You might want to set a profile first.';
       }
