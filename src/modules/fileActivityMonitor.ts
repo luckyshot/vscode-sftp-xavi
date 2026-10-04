@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import logger from '../logger';
-import { realpathSync } from 'fs';
 import app from '../app';
 import StatusBarItem from '../ui/statusBarItem';
 import { onDidOpenTextDocument, onDidSaveTextDocument, showConfirmMessage } from '../host';
@@ -46,13 +45,12 @@ async function handleFileSave(uri: vscode.Uri) {
 
   const config = fileService.getConfig();
   if (config.uploadOnSave) {
-    const fspath = await realpathSync.native(uri.fsPath);
-    uri = vscode.Uri.file(fspath);
+    const fspath = uri.fsPath;
     logger.info(`[file-save] ${fspath}`);
     try {
       await uploadFile(uri);
     } catch (error) {
-      logger.error(error, `download ${fspath}`);
+      logger.error(error, `upload ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
     }
   }

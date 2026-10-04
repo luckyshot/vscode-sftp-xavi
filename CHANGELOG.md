@@ -1,4 +1,5 @@
 ## Unreleased
+* Fix upload-on-save losing its configuration when Windows drive/UNC casing or a symlink differs from the workspace path (upstream #363, #397, #589). Map local paths without synchronous realpath calls or treating path strings as URIs.
 * Fix SFTP downloads, diffs and timestamp serialization on modern VS Code runtimes by upgrading ssh2 to 1.17.0 (upstream #586, #588, #590).
 
 ## 1.16.3 - 2023-06-16
