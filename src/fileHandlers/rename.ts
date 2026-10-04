@@ -1,11 +1,14 @@
 import { fileOperations } from '../core';
+import { toRemotePath } from '../helper';
 import createFileHandler from './createFileHandler';
 
-export const renameRemote = createFileHandler<{ originPath: string }>({
+// The handler context is the file's old location; newLocalPath is where it moved to.
+export const renameRemote = createFileHandler<{ newLocalPath: string }>({
   name: 'rename',
-  async handle({ originPath }) {
+  async handle({ newLocalPath }) {
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
-    const { localFsPath } = this.target;
-    await fileOperations.rename(originPath, localFsPath, remoteFs);
+    const { remoteFsPath } = this.target;
+    const newRemotePath = toRemotePath(newLocalPath, this.fileService.baseDir, this.config.remotePath);
+    await fileOperations.rename(remoteFsPath, newRemotePath, remoteFs);
   },
 });

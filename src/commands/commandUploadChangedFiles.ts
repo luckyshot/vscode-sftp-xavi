@@ -98,7 +98,7 @@ async function handleCommand(hint: any) {
   await Promise.all(
     renames.map(async change => {
       try {
-        await renameRemote(change.originalUri, { originPath: change.renameUri!.fsPath });
+        await renameRemote(change.originalUri, { newLocalPath: change.renameUri!.fsPath });
       } catch (e) {
         logger.error('Rename failed.', e);
       }
