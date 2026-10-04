@@ -12,3 +12,16 @@ test.each(['source', 'destination'])('aborts sync on %s listing errors without d
   expect(dst.rmdir).not.toHaveBeenCalled();
   expect(collect).not.toHaveBeenCalled();
 });
+
+test('waits for deletion and propagates failures', async () => {
+  const src = filesystem(), dst = filesystem([entry('/remote/a')]);
+  let rejectDelete;
+  dst.unlink.mockImplementation(() => new Promise((_, reject) => { rejectDelete = reject; }));
+  let finished = false;
+  const result = sync(config(src, dst, { delete: true }), () => {}).finally(() => { finished = true; });
+  const rejected = expect(result).rejects.toThrow('delete failed');
+  await new Promise(resolve => setImmediate(resolve));
+  expect(finished).toBe(false);
+  rejectDelete(new Error('delete failed'));
+  await rejected;
+});

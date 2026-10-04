@@ -222,7 +222,7 @@ async function _sync(
   }
 
   const altDirection = getAltDirection(transferDirection);
-  const syncFiles = (srcFileEntries: FileEntry[], desFileEntries: FileEntry[]) => {
+  const syncFiles = async (srcFileEntries: FileEntry[], desFileEntries: FileEntry[]) => {
     const srcFileTable = toHash(srcFileEntries, 'id', fileEntry => ({
       ...fileEntry,
       id: fileEntry.name,
@@ -373,8 +373,10 @@ async function _sync(
     }
 
     // side-effect
-    fileMissed.forEach(file => removeFile(file, targetFs, FileType.File, transferOption));
-    dirMissed.forEach(file => removeFile(file, targetFs, FileType.Directory, transferOption));
+    await Promise.all([
+      ...fileMissed.map(file => removeFile(file, targetFs, FileType.File, transferOption)),
+      ...dirMissed.map(file => removeFile(file, targetFs, FileType.Directory, transferOption)),
+    ]);
 
     const transFilePromise = file2trans.map(([src, target, direction, option]) =>
       transferFile(
