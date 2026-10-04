@@ -190,6 +190,34 @@ export default class SSHClient extends RemoteClient {
     }
 
     return new Promise<void>((resolve, reject) => {
+      const handshakeTimeout = interactiveAuth
+        ? Math.max(60000, connectTimeout || 0)
+        : connectTimeout ?? 10000;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let settled = false;
+      const clearDeadline = () => {
+        if (timer !== undefined) clearTimeout(timer);
+        timer = undefined;
+      };
+      const fail = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        clearDeadline();
+        reject(error instanceof CustomError
+          ? error
+          : new Error(`[${option.host}]: ${error.message}`));
+      };
+      const deadline = (timeout: number, message: string) => {
+        clearDeadline();
+        if (timeout > 0) {
+          timer = setTimeout(() => {
+            fail(new Error(message));
+            client.destroy();
+          }, timeout);
+        }
+      };
+      const resumeHandshake = () => deadline(handshakeTimeout, 'SSH handshake timed out');
+
       if (interactiveAuth) {
         client.on('keyboard-interactive', function redo(
           name,
@@ -200,31 +228,19 @@ export default class SSHClient extends RemoteClient {
           stackedAnswers
         ) {
           const answers = stackedAnswers ||
-            // load predefined answeres if any
-            (Array.isArray(interactiveAuth) ? interactiveAuth : undefined) ||
-            [];
+            (Array.isArray(interactiveAuth) ? interactiveAuth : undefined) || [];
           if (answers.length < prompts.length) {
-            config
-              .askForPasswd(
-                `[${option.host}]: ${prompts[answers.length].prompt}`
-              )
+            config.askForPasswd(`[${option.host}]: ${prompts[answers.length].prompt}`)
               .then(answer => {
+                if (settled) return;
                 if (answer === undefined) {
-                  return reject(
-                    new CustomError(ErrorCode.CONNECT_CANCELLED, 'cancelled')
-                  );
+                  fail(new CustomError(ErrorCode.CONNECT_CANCELLED, 'cancelled'));
+                  client.destroy();
+                  return;
                 }
-
                 answers.push(answer);
-                redo(
-                  name,
-                  instructions,
-                  instructionsLang,
-                  prompts,
-                  finish,
-                  answers
-                );
-              });
+                redo(name, instructions, instructionsLang, prompts, finish, answers);
+              }).catch(fail);
           } else {
             finish(answers);
           }
@@ -232,32 +248,49 @@ export default class SSHClient extends RemoteClient {
       }
 
       client
-        .on('ready', resolve)
-        .on('error', err => {
-          reject(new Error(`[${option.host}]: ${err.message}`));
+        .on('ready', () => {
+          if (settled) return;
+          settled = true;
+          clearDeadline();
+          resolve();
         })
-        .on('close', () => this.end())
-        .on('end', () => this.end())
-        .connect({
-          keepaliveInterval: 1000 * 30, // 30 secs, original
-          // keepaliveInterval: 1000 * 600, // 10 mins
-          // keepaliveInterval: 1000 * 1800, // 30 mins
-          keepaliveCountMax: 2, // x2 original
-          // keepaliveCountMax: 3, // x3
-          // keepaliveCountMax: 6, // x6
-          readyTimeout: interactiveAuth
-            ? Math.max(60 * 1000, connectTimeout || 0) // 60 secs, original
-            // ? Math.max(1800 * 1000, connectTimeout || 0) // 30 mins
-            // ? Math.max(10800 * 1000, connectTimeout || 0) // 180 mins
-            : connectTimeout,
+        .on('error', fail)
+        .on('close', () => {
+          fail(new Error('SSH connection closed'));
+          this.end();
+        })
+        .on('end', () => {
+          fail(new Error('SSH connection ended'));
+          this.end();
+        });
+      resumeHandshake();
+      try {
+        client.connect({
+          keepaliveInterval: 1000 * 30,
+          keepaliveCountMax: 2,
           ...option,
+          // Own deadlines allow fingerprint confirmation to pause the handshake timeout.
+          readyTimeout: 0,
           hostHash: undefined,
           hostVerifier: (key: Buffer, done: (trusted: boolean) => void) => {
+            if (settled) return done(false);
+            deadline(120000, 'Timed out while verifying SSH server fingerprint');
             verifyHostKey(option.host, option.port || 22, key, option.hostFingerprint)
-              .then(done, () => done(false));
+              .then(trusted => {
+                if (settled) return done(false);
+                resumeHandshake();
+                done(trusted);
+              }, () => {
+                if (settled) return done(false);
+                resumeHandshake();
+                done(false);
+              });
           },
           tryKeyboard: !!interactiveAuth,
         });
+      } catch (error) {
+        fail(error);
+      }
     });
   }
 

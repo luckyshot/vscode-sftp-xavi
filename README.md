@@ -298,3 +298,5 @@ SFTP verifies the server host key before authentication, including each jump hos
 Remote previews are limited to 10 MiB by default. Adjust `sftpXavi.maxRemotePreviewBytes` to change the limit, or download larger files. Cancelling a preview stops its read stream.
 
 The Create File command requires exclusive creation, supported by SFTP and local filesystems. FTP cannot guarantee that an existing file will be preserved, so this command reports an unsupported operation for FTP.
+
+SSH fingerprint verification has a separate two-minute deadline. The configured connection timeout resumes after verification.
