@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.2.1 - 2026-10-04
+
 * Downloads no longer write through a symbolic link already present at the destination, which a hostile server could plant to make a later download overwrite another local file. The download fails with an explicit error instead.
 * The temporary copy of a remote file that **Diff** downloads is now deleted when its diff is closed (or on failure or shutdown) instead of staying in the temp folder.
 * FTP now refuses paths containing a line break. The FTP library builds commands as plain strings, so a file named with a line break could send extra commands to your server.
