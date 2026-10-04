@@ -223,7 +223,7 @@ export default class RemoteTreeData
     const localFs = root.explorerContext.fileService.getLocalFileSystem();
     const compareMtime = config.protocol !== 'ftp';
     const metas = await mapConcurrent(visible, LOCAL_STAT_CONCURRENCY, async entry => {
-      const localPath = toLocalPath(entry.fspath, config.remotePath, config.context);
+      const localPath = toLocalPath(entry.fspath, config.remotePath, root.explorerContext.fileService.baseDir);
       const local = await localFs.lstat(localPath).catch(() => null);
       const isDir = entry.type === FileType.Directory;
       let result: CompareResult = compareEntries(
@@ -387,8 +387,8 @@ export default class RemoteTreeData
   getLocalPath(item: ExplorerItem): string | undefined {
     const root = this.findRoot(item.resource.uri);
     if (!root) return undefined;
-    const { config } = root.explorerContext;
-    return toLocalPath(item.resource.fsPath, config.remotePath, config.context);
+    const { config, fileService } = root.explorerContext;
+    return toLocalPath(item.resource.fsPath, config.remotePath, fileService.baseDir);
   }
 
   /** Open a diff of the remote file (left) against its local counterpart (right). */
