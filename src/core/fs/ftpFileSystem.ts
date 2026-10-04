@@ -35,6 +35,7 @@ function toNumMode(rightObj) {
 }
 
 export default class FTPFileSystem extends RemoteFileSystem {
+  readonly supportsExclusiveCreation = false;
   private _supportMFMT: boolean = true;
 
   static getFileType(type) {

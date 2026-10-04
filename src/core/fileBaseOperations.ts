@@ -53,18 +53,22 @@ export function createDir(path: string, fs: FileSystem, option): Promise<void> {
 }
 
 export async function createFile(path: string, fs: FileSystem, option): Promise<void> {
+  if (fs.supportsExclusiveCreation === false) throw new Error('This protocol does not support safe exclusive file creation');
   try {
     await fs.lstat(path);
-    logger.warn(`Can't create file becase file already exist`);
-    window.showErrorMessage(`Can't create file becase file already exist`);
+    logger.warn('Cannot create file because it already exists');
+    window.showErrorMessage('Cannot create file because it already exists');
     return;
   } catch (error) {
-
+    if (error.code !== 'ENOENT' && error.code !== 2) throw error;
   }
 
-  const targetFd = await fs.open(path, 'w');
-  const s = new Readable();
-  s._read = () => { };
-  s.push(null);
-  return fs.put(s, path, { fd: targetFd });
+  const targetFd = await fs.open(path, 'wx');
+  const input = Readable.from([]);
+  try {
+    await fs.put(input, path, { fd: targetFd, autoClose: false });
+  } finally {
+    input.destroy();
+    await fs.close(targetFd);
+  }
 }

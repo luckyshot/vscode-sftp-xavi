@@ -42,6 +42,7 @@ export type FileEntry = FileStats & {
 };
 
 export default abstract class FileSystem {
+  readonly supportsExclusiveCreation: boolean = true;
   static getFileTypecharacter(stat: fs.Stats): FileType {
     if (stat.isDirectory()) {
       return FileType.Directory;
