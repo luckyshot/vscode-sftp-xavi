@@ -96,7 +96,7 @@ async function transferFolder(
   for (const file of fileEntries) {
     await transferWithType({
       ...config,
-      transferOption: { ...config.transferOption, mtime: file.mtime, atime: file.atime },
+      transferOption: { ...config.transferOption, fallbackMode: file.mode, mtime: file.mtime, atime: file.atime },
       srcFsPath: file.fspath,
       targetFsPath: entryPath(targetFs.pathResolver, targetFsPath, file.name),
       ensureDirExist: false,
