@@ -12,6 +12,15 @@ interface FtpFileHandle {
   mode?: number;
 }
 
+// The ftp library joins commands as plain strings, so a path with a line break would
+// run whatever follows it as another FTP command.
+function safePath(path: string): string {
+  if (/[\r\n\0]/.test(path)) {
+    throw new Error(`Refusing FTP path containing a line break: ${JSON.stringify(path)}`);
+  }
+  return path;
+}
+
 const numMap = {
   r: 4,
   w: 2,
@@ -120,8 +129,10 @@ export default class FTPFileSystem extends RemoteFileSystem {
     return this.lstat(fd.path);
   }
 
-  futimes(fd: FtpFileHandle, _atime: number, mtime: number): Promise<void> {
-    if (!this._supportMFMT) return Promise.resolve();
+  async futimes(fd: FtpFileHandle, _atime: number, mtime: number): Promise<void> {
+    // Rejected here so it is not mistaken for a server without MFMT support below.
+    safePath(fd.path);
+    if (!this._supportMFMT) return;
 
     return this.atomicSetLastMod(fd.path, new Date(mtime * 1000)).catch(_ => {
       logger.info('Don\'t Support MFMT');
@@ -275,6 +286,8 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   async renameAtomic(srcPath: string, destPath: string): Promise<void> {
+    safePath(srcPath);
+    safePath(destPath);
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.rename(srcPath, destPath, err => {
@@ -290,6 +303,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   private async atomicList(path: string): Promise<any[]> {
+    safePath(path);
     const task = () =>
       new Promise<any[]>((resolve, reject) => {
         this.ftp.list(path, (err, stats) => {
@@ -305,6 +319,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   private async atomicGet(path: string): Promise<Readable> {
+    safePath(path);
     const task = () =>
       new Promise<Readable>((resolve, reject) => {
         this.ftp.get(path, (err, stream) => {
@@ -320,6 +335,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   private async atomicPut(input: Readable, path: string): Promise<void> {
+    safePath(path);
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.put(input, path, err => {
@@ -335,6 +351,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   private async atomicDeleteFile(path: string): Promise<void> {
+    safePath(path);
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.delete(path, err => {
@@ -350,6 +367,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   private async atomicMakeDir(path: string): Promise<void> {
+    safePath(path);
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.mkdir(path, err => {
@@ -368,6 +386,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
     path: string,
     recursive: boolean
   ): Promise<void> {
+    safePath(path);
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.rmdir(path, recursive, err => {
@@ -383,6 +402,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   private async atomicSite(command: string): Promise<void> {
+    safePath(command);
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.site(command, err => {
@@ -398,6 +418,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
   }
 
   private async atomicSetLastMod(path: string, date: Date): Promise<void> {
+    safePath(path);
     const task = () =>
       new Promise<void>((resolve, reject) => {
         this.ftp.setLastMod(path, date, err => {
