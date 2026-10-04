@@ -599,16 +599,14 @@ export default class FileService {
 
     const ignore = Ignore.from(ignoreConfig);
     const ignoreFunc = fsPath => {
-      // vscode will always return path with / as separator
-      const normalizedPath = path.normalize(fsPath);
-      let relativePath;
-      if (normalizedPath.indexOf(localContext) === 0) {
-        // local path
-        relativePath = path.relative(localContext, fsPath);
-      } else {
-        // remote path
-        relativePath = upath.relative(remoteContext, fsPath);
-      }
+      // Native relative paths handle drive/UNC casing on Windows and enforce
+      // directory boundaries, unlike a case-sensitive string prefix check.
+      const localRelative = path.relative(localContext, fsPath);
+      const isLocal = localRelative !== '..' &&
+        !localRelative.startsWith('..' + path.sep) && !path.isAbsolute(localRelative);
+      const relativePath = upath.normalize(isLocal
+        ? localRelative
+        : upath.relative(remoteContext, fsPath));
 
       // skip root
       return relativePath !== '' && ignore.ignores(relativePath);
