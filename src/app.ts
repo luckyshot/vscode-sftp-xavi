@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache';
 import StatusBarItem from './ui/statusBarItem';
-import { COMMAND_TOGGLE_OUTPUT, EXTENSION_DISPLAY_NAME } from './constants';
+import { COMMAND_TOGGLE_OUTPUT, COMMAND_CANCEL_ALL_TRANSFER, EXTENSION_DISPLAY_NAME } from './constants';
 import AppState from './modules/appState';
 import RemoteExplorer from './modules/remoteExplorer';
 
@@ -23,7 +23,8 @@ app.sftpBarItem = new StatusBarItem(
     }
   },
   EXTENSION_DISPLAY_NAME,
-  COMMAND_TOGGLE_OUTPUT
+  COMMAND_TOGGLE_OUTPUT,
+  COMMAND_CANCEL_ALL_TRANSFER
 );
 app.fsCache = new LRUCache<string, string>({ max: 6 });
 

@@ -108,7 +108,7 @@ Download file or folders.
 func(fspaths: string[])
 
 ### SFTP Xavi: Cancel All Transfers
-Stop the current transfers (upload and download).
+Stop the current transfers (upload and download). Batches of 5 or more files show a progress notification with a Cancel button, and clicking the spinning SFTP Xavi item in the status bar runs this command too.
 
 ### SFTP Xavi: Open SSH in Terminal
 Open a terminal in Visual Studio Code and auto login to a specific server.

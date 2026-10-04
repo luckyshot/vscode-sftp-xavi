@@ -22,6 +22,7 @@ export default class StatusBarItem {
   private spinnerTimer: any = null;
   private resetTimer: any = null;
   private curFrameOfSpinner: number = 0;
+  private idleCommand: string;
   private text: string;
   private status: Status = Status.ok;
   private spinner: {
@@ -29,10 +30,11 @@ export default class StatusBarItem {
     frames: string[];
   };
 
-  constructor(name, tooltip, command) {
+  constructor(name, tooltip, command, private busyCommand?: string) {
     this._name = name;
     this.tooltip = tooltip;
     this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+    this.idleCommand = command;
     this.statusBarItem.command = command;
     this.spinner = spinners.dots;
     this.reset = this.reset.bind(this);
@@ -70,6 +72,9 @@ export default class StatusBarItem {
       this.curFrameOfSpinner = (this.curFrameOfSpinner + 1) % totalFrame;
       this._render();
     }, this.spinner.interval);
+    if (this.busyCommand) {
+      this.statusBarItem.command = this.busyCommand;
+    }
     this._render();
   }
 
@@ -77,6 +82,7 @@ export default class StatusBarItem {
     clearInterval(this.spinnerTimer);
     this.spinnerTimer = null;
     this.curFrameOfSpinner = 0;
+    this.statusBarItem.command = this.idleCommand;
     this._render();
   }
 

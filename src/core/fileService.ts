@@ -339,6 +339,8 @@ function mergeProfile(
 enum Event {
   BEFORE_TRANSFER = 'BEFORE_TRANSFER',
   AFTER_TRANSFER = 'AFTER_TRANSFER',
+  BATCH_START = 'BATCH_START',
+  BATCH_END = 'BATCH_END',
 }
 
 let id = 0;
@@ -431,6 +433,14 @@ export default class FileService {
     this._eventEmitter.on(Event.AFTER_TRANSFER, listener);
   }
 
+  onBatchStart(listener: (taskCount: number) => void) {
+    this._eventEmitter.on(Event.BATCH_START, listener);
+  }
+
+  onBatchEnd(listener: () => void) {
+    this._eventEmitter.on(Event.BATCH_END, listener);
+  }
+
   createTransferScheduler(concurrency): TransferScheduler {
     if (!Number.isInteger(concurrency) || concurrency < 1) throw new Error('concurrency must be a positive integer');
     const tasks: TransferTask[] = [];
@@ -447,6 +457,7 @@ export default class FileService {
           return Promise.resolve();
         }
         this._activeConcurrency.set(batch, concurrency);
+        this._eventEmitter.emit(Event.BATCH_START, tasks.length);
         this._sharedTransferScheduler.setConcurrency(Math.min(...this._activeConcurrency.values()));
         running = Promise.all(tasks.splice(0).map(task => new Promise<void>(resolve => {
           this._sharedTransferScheduler.add(async () => {
@@ -466,6 +477,7 @@ export default class FileService {
         }))).then(() => undefined).finally(() => {
           this._activeConcurrency.delete(batch);
           this._removeScheduler(batch);
+          this._eventEmitter.emit(Event.BATCH_END);
           if (this._activeConcurrency.size) {
             this._sharedTransferScheduler.setConcurrency(Math.min(...this._activeConcurrency.values()));
           }

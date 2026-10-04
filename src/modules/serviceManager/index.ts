@@ -6,6 +6,7 @@ import { simplifyPath, reportError } from '../../helper';
 import { UResource, FileService, TransferTask } from '../../core';
 import { validateConfig } from '../config';
 import watcherService from '../fileWatcher';
+import transferProgress from '../../ui/transferProgress';
 import Trie from './trie';
 
 const WIN_DRIVE_REGEX = /^([a-zA-Z]):/;
@@ -86,8 +87,11 @@ export function createFileService(config: any, workspace: string) {
   service.name = config.name;
   service.setConfigValidator(validateConfig);
   service.setWatcherService(watcherService);
+  service.onBatchStart(count => transferProgress.batchStart(count));
+  service.onBatchEnd(() => transferProgress.batchEnd());
   service.beforeTransfer(task => {
     const { localFsPath, transferType } = task;
+    transferProgress.taskStart(path.basename(localFsPath));
     app.sftpBarItem.showMsg(
       `${transferType} ${path.basename(localFsPath)}`,
       simplifyPath(localFsPath)
@@ -95,6 +99,7 @@ export function createFileService(config: any, workspace: string) {
   });
   service.afterTransfer((error, task) => {
     const { localFsPath, transferType } = task;
+    transferProgress.taskEnd();
     const filename = path.basename(localFsPath);
     const filepath = simplifyPath(localFsPath);
     if (task.isCancelled()) {
