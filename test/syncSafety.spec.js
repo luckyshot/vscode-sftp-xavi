@@ -25,3 +25,21 @@ test('waits for deletion and propagates failures', async () => {
   rejectDelete(new Error('delete failed'));
   await rejected;
 });
+
+test('preserves ignored descendants and their parents while removing other children', async () => {
+  const { FileType } = require('../src/core/fs/fileSystem');
+  const src = filesystem(), dst = filesystem();
+  dst.list.mockImplementation(async p => p === '/remote' ? [entry('/remote/assets', 1000, FileType.Directory)] : [entry('/remote/assets/keep.txt'), entry('/remote/assets/remove.txt')]);
+  await sync(config(src, dst, { delete: true, ignore: p => p.endsWith('keep.txt') }), () => {});
+  expect(dst.unlink.mock.calls).toEqual([['/remote/assets/remove.txt']]);
+  expect(dst.rmdir).not.toHaveBeenCalled();
+});
+
+test('removes an unprotected directory only after visiting its children', async () => {
+  const { FileType } = require('../src/core/fs/fileSystem');
+  const src = filesystem(), dst = filesystem();
+  dst.list.mockImplementation(async p => p === '/remote' ? [entry('/remote/assets', 1000, FileType.Directory)] : [entry('/remote/assets/a')]);
+  await sync(config(src, dst, { delete: true }), () => {});
+  expect(dst.unlink).toHaveBeenCalledWith('/remote/assets/a');
+  expect(dst.rmdir).toHaveBeenCalledWith('/remote/assets', false);
+});

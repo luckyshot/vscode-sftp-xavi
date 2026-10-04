@@ -190,23 +190,31 @@ async function transferWithType(
   }
 }
 
-async function removeFile(file: string, fs: FileSystem, fileType: FileType, option) {
+async function removeFile(file: string, fs: FileSystem, fileType: FileType, option): Promise<boolean> {
   if (option.ignore && option.ignore(file)) {
-    return;
+    return false;
   }
 
   switch (fileType) {
     case FileType.Directory:
-      await fileOperations.removeDir(file, fs, option);
+      const children = await fs.list(file);
+      let canRemove = true;
+      for (const child of children) {
+        if (!await removeFile(child.fspath, fs, child.type, option)) {
+          canRemove = false;
+        }
+      }
+      if (!canRemove) return false;
+      await fs.rmdir(file, false);
       logger.info('folder removed.');
-      break;
+      return true;
     case FileType.File:
     case FileType.SymbolicLink:
       await fileOperations.removeFile(file, fs, option);
       logger.info('file removed.');
-      break;
+      return true;
     default:
-      break;
+      return false;
   }
 }
 
