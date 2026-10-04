@@ -1,4 +1,4 @@
-const { SyncState, compareEntries, stateBadge } = require('../src/modules/remoteExplorer/syncState');
+const { SyncState, compareEntries, stateBadge, summarizeDecoration } = require('../src/modules/remoteExplorer/syncState');
 const ListingCache = require('../src/modules/remoteExplorer/listingCache').default;
 
 const file = (size, mtime) => ({ isDirectory: false, size, mtime });
@@ -61,5 +61,26 @@ describe('ListingCache', () => {
     expect(cache.get('/a')).toBeUndefined();
     expect(cache.get('/a/b')).toBeUndefined();
     expect(cache.get('/ab')).toBe(3);
+  });
+});
+
+describe('summarizeDecoration', () => {
+  test('a folder that matches locally still shows the count of differing children', () => {
+    const summary = summarizeDecoration({ state: SyncState.Same }, 3);
+    expect(summary.differing).toBe(3);
+    expect(summary.tooltip).toBe('3 items differ from local');
+  });
+
+  test('a root without its own result shows the count', () => {
+    expect(summarizeDecoration(undefined, 1).tooltip).toBe('1 item differs from local');
+  });
+
+  test('a folder missing locally keeps its own status', () => {
+    expect(summarizeDecoration({ state: SyncState.RemoteOnly }, 2).state).toBe(SyncState.RemoteOnly);
+  });
+
+  test('nothing to show for matching items', () => {
+    expect(summarizeDecoration(undefined, 0)).toBeUndefined();
+    expect(summarizeDecoration({ state: SyncState.Same }, 0).state).toBe(SyncState.Same);
   });
 });

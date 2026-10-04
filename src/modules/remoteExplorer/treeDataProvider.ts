@@ -22,7 +22,7 @@ import { toLocalPath } from '../../helper';
 import mapConcurrent from '../../core/mapConcurrent';
 import ListingCache from './listingCache';
 import SyncDecorationProvider, { DecorationInfo } from './decorationProvider';
-import { SyncState, CompareResult, compareEntries, stateLabel } from './syncState';
+import { SyncState, CompareResult, compareEntries, stateLabel, summarizeDecoration } from './syncState';
 
 type Id = number;
 
@@ -105,6 +105,8 @@ interface ItemMeta {
   entry: FileEntry;
   local: FileStats | null;
   result: CompareResult;
+  /** The verdict came from comparing contents, so it outlives a refresh while neither side changes. */
+  checked?: boolean;
 }
 
 export default class RemoteTreeData
@@ -235,7 +237,8 @@ export default class RemoteTreeData
         { isDirectory: isDir, size: entry.size, mtime: entry.mtime },
         { compareMtime }
       );
-      if (result.state === SyncState.RemoteOnly && config.ignore && config.ignore(localPath)) {
+      // sync commands skip ignored paths in both directions, so don't flag them as differences
+      if (result.state !== SyncState.Unknown && config.ignore && config.ignore(localPath)) {
         result = { state: SyncState.Ignored };
       }
       return { entry, local, result } as ItemMeta;
@@ -249,13 +252,11 @@ export default class RemoteTreeData
       const key = uri.toString();
       const prev = this._meta.get(key);
       if (!prev || prev.result.state !== meta.result.state) changed.push(uri);
-      // keep a content-checked verdict while neither side has changed
       const verdictStillValid =
-        prev &&
-        prev.result.state === SyncState.Same &&
-        meta.result.state === SyncState.Modified &&
+        prev?.checked &&
         prev.entry.size === meta.entry.size &&
         prev.entry.mtime === meta.entry.mtime &&
+        prev.local?.size === meta.local?.size &&
         prev.local?.mtime === meta.local?.mtime;
       this._meta.set(key, verdictStillValid ? prev : meta);
       const { state } = this._meta.get(key)!.result;
@@ -371,19 +372,7 @@ export default class RemoteTreeData
 
   private _decorationFor(uri: vscode.Uri): DecorationInfo | undefined {
     const key = uri.toString();
-    const meta = this._meta.get(key);
-    if (meta) {
-      return { state: meta.result.state, tooltip: stateLabel(meta.result) };
-    }
-    const differing = this._folderDiffs.get(key);
-    if (differing) {
-      return {
-        state: SyncState.Modified,
-        tooltip: `${differing} item${differing === 1 ? '' : 's'} differ from local`,
-        differing,
-      };
-    }
-    return undefined;
+    return summarizeDecoration(this._meta.get(key)?.result, this._folderDiffs.get(key));
   }
 
   /** Metadata for the compare commands; undefined until the parent folder has been listed. */
@@ -402,9 +391,14 @@ export default class RemoteTreeData
   /** Open a diff of the remote file (left) against its local counterpart (right). */
   async compareWithLocal(item: ExplorerItem): Promise<void> {
     if (item.isDirectory) return;
+    const root = this.findRoot(item.resource.uri);
     const localPath = this.getLocalPath(item);
     const meta = this.getMeta(item);
-    if (!localPath || meta?.result.state === SyncState.RemoteOnly) {
+    // the status is unknown if the parent folder was never listed, so look at the disk
+    const existsLocally = meta
+      ? !!meta.local
+      : !!root && !!localPath && (await root.explorerContext.fileService.getLocalFileSystem().lstat(localPath).then(() => true, () => false));
+    if (!localPath || !existsLocally) {
       vscode.window.showInformationMessage('This file does not exist locally.');
       return;
     }
@@ -440,7 +434,7 @@ export default class RemoteTreeData
     ]);
     const same = Buffer.compare(Buffer.from(remote), Buffer.from(local)) === 0;
     const key = item.resource.uri.toString();
-    this._meta.set(key, { ...meta, result: same ? { state: SyncState.Same } : meta.result.state === SyncState.Same ? { state: SyncState.Modified } : meta.result });
+    this._meta.set(key, { ...meta, checked: true, result: same ? { state: SyncState.Same } : { state: SyncState.Modified } });
     this.decorations.fire(item.resource.uri);
     const parent = await this.getParent(item);
     this._onDidChangeFolder.fire(parent);

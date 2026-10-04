@@ -1,13 +1,8 @@
 import * as vscode from 'vscode';
 import { REMOTE_SCHEME } from '../../constants';
-import { SyncState, stateBadge } from './syncState';
+import { SyncState, DecorationSummary, stateBadge } from './syncState';
 
-export interface DecorationInfo {
-  state: SyncState;
-  tooltip: string;
-  /** Folders: number of loaded children that differ from local. */
-  differing?: number;
-}
+export type DecorationInfo = DecorationSummary;
 
 const COLORS: Partial<Record<SyncState, string>> = {
   [SyncState.Modified]: 'gitDecoration.modifiedResourceForeground',

@@ -83,3 +83,29 @@ export function stateLabel(result: CompareResult): string {
       return 'Local status unknown';
   }
 }
+
+export interface DecorationSummary {
+  state: SyncState;
+  tooltip: string;
+  /** Folders: number of loaded children that differ from local. */
+  differing?: number;
+}
+
+/**
+ * Choose what to show for an explorer item. A folder that exists on both sides
+ * reports `Same`, so its own status must not hide the count of differing children.
+ */
+export function summarizeDecoration(
+  result: CompareResult | undefined,
+  differing: number | undefined
+): DecorationSummary | undefined {
+  const hasDiffering = !!differing && (!result || result.state === SyncState.Same);
+  if (hasDiffering) {
+    return {
+      state: SyncState.Modified,
+      tooltip: differing === 1 ? '1 item differs from local' : `${differing} items differ from local`,
+      differing,
+    };
+  }
+  return result ? { state: result.state, tooltip: stateLabel(result) } : undefined;
+}
