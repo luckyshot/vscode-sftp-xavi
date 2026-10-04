@@ -117,6 +117,30 @@ describe('transfer algorithm', () => {
       expect(tasks.length).toBe(0);
     });
 
+    test('a download cannot overwrite the local SFTP configuration', async () => {
+      fillFs({
+        local: { '.vscode': { 'sftp.json': file('mine') } },
+        remote: { '.vscode': { 'sftp.json': file('hostile'), 'settings.json': file('{}') } },
+      });
+      const tasks: TransferTask[] = [];
+      await sync({
+        srcFsPath: '/remote', srcFs: localFs,
+        targetFsPath: '/local', targetFs: localFs,
+        transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+        transferOption: { ignore: null, perserveTargetMode: false },
+      }, task => tasks.push(task));
+      expect(mapList(tasks, 'targetFsPath')).toEqual(['/local/.vscode/settings.json'].formatSep());
+
+      const direct: TransferTask[] = [];
+      await transfer({
+        srcFsPath: '/remote/.vscode/sftp.json', srcFs: localFs,
+        targetFsPath: '/local/.vscode/sftp.json', targetFs: localFs,
+        transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+        transferOption: { ignore: null, perserveTargetMode: false },
+      }, task => direct.push(task));
+      expect(direct.length).toBe(0);
+    });
+
     test('sync', async () => {
       fillFs({
         local: {

@@ -111,9 +111,10 @@ async function transferFile(
   fileType: FileType,
   collect: (t: TransferTask) => void
 ) {
-  // Force upload bypasses user patterns, but never configuration credentials.
-  if (config.transferDirection === TransferDirection.LOCAL_TO_REMOTE &&
-      isProtectedConfigPath(config.srcFsPath)) {
+  // Force transfers bypass user patterns, but never touch the configuration file:
+  // uploading it leaks credentials, and downloading it lets a server rewrite the
+  // connection settings (including sshCustomParams) of the local workspace.
+  if (isProtectedConfigPath(config.srcFsPath) || isProtectedConfigPath(config.targetFsPath)) {
     return;
   }
 

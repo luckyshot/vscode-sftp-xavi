@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Downloads and syncs from a server can no longer overwrite the local `.vscode/sftp.json`, which uploads already skipped. A compromised server could otherwise change the connection settings, including `sshCustomParams`.
 * The extension no longer runs in untrusted workspaces. A cloned repository can supply its own `.vscode/sftp.json`, so connecting to its server, upload on save, and `sshCustomParams` now wait until you trust the workspace.
 
 ## 2.2.0 - 2026-10-04
