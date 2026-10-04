@@ -3,6 +3,7 @@ import { COMMAND_OPEN_CONNECTION_IN_TERMINAL } from '../constants';
 import { getAllFileService } from '../modules/serviceManager';
 import { ExplorerRoot } from '../modules/remoteExplorer';
 import { interpolate } from '../utils';
+import { splitSshArguments } from '../helper/sshArguments';
 import { checkCommand } from './abstract/createCommand';
 
 const isWindows = process.platform === 'win32';
@@ -24,17 +25,6 @@ function adaptPath(filepath) {
   return filepath.replace(/\\\\/g, '/').replace(/\\/g, '/');
 }
 
-function getSshCommand(
-  config: { host: string; port: number; username: string },
-  extraOption?: string
-) {
-  let sshStr = `ssh -t ${config.username}@${config.host} -p ${config.port}`;
-  if (extraOption) {
-    sshStr += ` ${extraOption}`;
-  }
-  // sshStr += ` "cd \\"${config.workingDir}\\"; exec \\$SHELL -l"`;
-  return sshStr;
-}
 
 export default checkCommand({
   id: COMMAND_OPEN_CONNECTION_IN_TERMINAL,
@@ -74,31 +64,23 @@ export default checkCommand({
       remoteConfig = item.config;
     }
 
-    const sshConfig = {
-      host: remoteConfig.host,
-      port: remoteConfig.port,
-      username: remoteConfig.username,
-    };
-    const terminal = vscode.window.createTerminal(remoteConfig.name);
-    let sshCommand;
-    if (shouldUseAgent(remoteConfig)) {
-      sshCommand = getSshCommand(sshConfig);
-    } else if (shouldUseKey(remoteConfig)) {
-      sshCommand = getSshCommand(sshConfig, `-i "${adaptPath(remoteConfig.privateKeyPath)}"`);
-    } else {
-      sshCommand = getSshCommand(sshConfig);
+    const shellArgs = ['-t', '-l', remoteConfig.username, '-p', String(remoteConfig.port)];
+    if (!shouldUseAgent(remoteConfig) && shouldUseKey(remoteConfig)) {
+      shellArgs.push('-i', adaptPath(remoteConfig.privateKeyPath));
     }
-
+    // The host is an argument, never executable local shell text.
+    if (typeof remoteConfig.host !== 'string' || remoteConfig.host.startsWith('-') || /[\r\n\0]/.test(remoteConfig.host)) {
+      throw new Error('Invalid SSH host');
+    }
+    shellArgs.push(remoteConfig.host);
     if (remoteConfig.sshCustomParams) {
-      sshCommand =
-        sshCommand +
-        ' ' +
-        interpolate(remoteConfig.sshCustomParams, {
-          remotePath: remoteConfig.remotePath,
-        });
+      shellArgs.push(...splitSshArguments(interpolate(remoteConfig.sshCustomParams, { remotePath: remoteConfig.remotePath })));
     }
-
-    terminal.sendText(sshCommand);
+    const terminal = vscode.window.createTerminal({
+      name: remoteConfig.name || 'SSH',
+      shellPath: 'ssh',
+      shellArgs,
+    });
     terminal.show();
   },
 });
