@@ -18,29 +18,16 @@ const serviceManager = new Trie<FileService>(
   }
 );
 
-function maskConfig(config) {
-  const copy = {};
-  const MASK = '******';
-  Object.keys(config).forEach(key => {
-    const configValue = config[key];
-    switch (key) {
-      case 'username':
-      case 'password':
-      case 'passphrase':
-        copy[key] = MASK;
-        break;
-      case 'interactiveAuth':
-        if (Array.isArray(configValue)) {
-          copy[key] = configValue.map(phrase => MASK);
-        } else {
-          copy[key] = configValue;
-        }
-        break;
-      default:
-        copy[key] = configValue;
-    }
-  });
-  return copy;
+export function maskConfig(config: any): any {
+  if (Array.isArray(config)) return config.map(maskConfig);
+  if (!config || typeof config !== 'object') return config;
+  const secretKeys = new Set(['username', 'password', 'passphrase', 'privatekey']);
+  return Object.fromEntries(Object.entries(config).map(([key, value]) => [
+    key,
+    secretKeys.has(key.toLowerCase()) || (key === 'interactiveAuth' && Array.isArray(value))
+      ? '******'
+      : maskConfig(value),
+  ]));
 }
 
 function normalizePathForTrie(pathname) {
