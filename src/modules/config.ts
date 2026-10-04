@@ -23,11 +23,11 @@ const configScheme = {
   agent: nullable(Joi.string()),
   privateKeyPath: nullable(Joi.string()),
   passphrase: nullable(Joi.string().allow(true)),
-  interactiveAuth: Joi.alternatives([
+  interactiveAuth: Joi.alternatives().try(
     Joi.boolean(),
     Joi.array()
       .items(Joi.string()),
-  ]).optional(),
+  ).optional(),
   algorithms: Joi.any(),
   sshConfigPath: Joi.string(),
   sshCustomParams: Joi.string(),
@@ -125,15 +125,12 @@ function getConfigPath(basePath) {
   return path.join(basePath, CONFIG_PATH);
 }
 
+const configSchema = Joi.object(configScheme);
+
 export function validateConfig(config) {
-  const { error } = Joi.validate(config, configScheme, {
+  const { error } = configSchema.validate(config, {
     allowUnknown: true,
     convert: false,
-    language: {
-      object: {
-        child: '!!prop "{{!child}}" fails because {{reason}}',
-      },
-    },
   });
   return error;
 }

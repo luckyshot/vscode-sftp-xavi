@@ -1,4 +1,4 @@
-import PQueue from 'p-queue';
+import SerialQueue from '../serialQueue';
 import { Readable } from 'stream';
 import logger from '../../logger';
 import { FileEntry, FileType, FileStats, FileOption } from './fileSystem';
@@ -48,7 +48,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
     }
   }
 
-  private queue: any = new PQueue({ concurrency: 1 });
+  private readonly queue = new SerialQueue();
 
   get ftp() {
     return this.getClient().getFsClient();

@@ -1,4 +1,7 @@
-const { fs } = require('memfs');
+// Copy getter-backed properties before graceful-fs patches the fs object.
+const fs = { ...require('memfs').fs };
+fs.realpath.native = fs.realpath;
+fs.realpathSync.native = fs.realpathSync;
 
 // memfs does not disable stream auto-destruction when autoClose is false,
 // unlike Node's fs. Keep caller-owned descriptors open for futimes and close.
