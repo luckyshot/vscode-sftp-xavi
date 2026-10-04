@@ -32,6 +32,8 @@
   ],
   "activationEvents": [
     "onCommand:sftpXavi.config",
+    "onCommand:sftpXavi.checkForUpdates",
+    "onStartupFinished",
     "workspaceContains:.vscode/sftp.json"
   ],
   "icon": "resources/icon.png",
@@ -65,6 +67,11 @@
       "type": "object",
       "title": "SFTP Xavi",
       "properties": {
+        "sftpXavi.updates.checkAutomatically": {
+          "type": "boolean",
+          "default": true,
+          "description": "Once a week, check the SFTP Xavi GitHub releases for a newer version and offer to install it. Nothing is installed without your confirmation. The check can also be run on demand with \"SFTP Xavi: Check for Updates\"."
+        },
         "sftpXavi.printDebugLog": {
           "type": "boolean",
           "default": false,
@@ -98,6 +105,11 @@
       {
         "command": "sftpXavi.config",
         "title": "Config",
+        "category": "SFTP Xavi"
+      },
+      {
+        "command": "sftpXavi.checkForUpdates",
+        "title": "Check for Updates",
         "category": "SFTP Xavi"
       },
       {

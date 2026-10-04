@@ -46,7 +46,7 @@ Requires VS Code 1.100 or newer.
    or in VS Code: open the Command Palette, run **Extensions: Install from VSIX...**, and choose the file.
 4. Reload VS Code. Look for **SFTP Xavi** in Extensions. Its extension ID is `luckyshot.sftp-xavi`.
 
-To update, install the newer VSIX the same way; it replaces the old version. You can also build a VSIX yourself with `npm ci && npm run package`.
+To update, run **SFTP Xavi: Check for Updates** from the Command Palette. It tells you which version you have and, if a newer release exists, offers to download and install it (**Update**), ignore that version (**Skip this version**), or ask again in 7 days (**Remind later**). SFTP Xavi also runs this check once a week and never installs anything without asking; set `sftpXavi.updates.checkAutomatically` to `false` to turn the weekly check off. You can also install the newer VSIX manually the same way as above; it replaces the old version. You can also build a VSIX yourself with `npm ci && npm run package`.
 
 ### Moving from the original extension
 

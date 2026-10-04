@@ -17,6 +17,7 @@ export const COMMAND_TOGGLE_OUTPUT = 'sftpXavi.toggleOutput';
 
 // commands in package.json
 export const COMMAND_CONFIG = 'sftpXavi.config';
+export const COMMAND_CHECK_FOR_UPDATES = 'sftpXavi.checkForUpdates';
 export const COMMAND_SET_PROFILE = 'sftpXavi.setProfile';
 export const COMMAND_CANCEL_ALL_TRANSFER = 'sftpXavi.cancelAllTransfer';
 export const COMMAND_OPEN_CONNECTION_IN_TERMINAL = 'sftpXavi.openConnectInTerminal';

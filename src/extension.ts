@@ -12,6 +12,7 @@ import { getWorkspaceFolders, setContextValue } from './host';
 import RemoteExplorer from './modules/remoteExplorer';
 import { configureHostKeyVerification } from './core/hostKeyVerifier';
 import { removeAllDiffTmpFiles } from './fileHandlers/diff';
+import { initUpdateChecker } from './modules/updateChecker';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -42,6 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
   } catch (error) {
     reportError(error, 'initCommands');
   }
+  initUpdateChecker(context);
 
   const workspaceFolders = getWorkspaceFolders();
   if (!workspaceFolders) {
