@@ -8,6 +8,8 @@ Set to `control` for control encryption only, or `implicit` for implicitly encry
 | --- | --- | --- |
 | *secure* | *mixed* | `false` |
 
+With the default `false`, the password and file contents are sent unencrypted, and SFTP Xavi shows a warning the first time it connects to each server.
+
 ```json
 {
   "secure": control

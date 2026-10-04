@@ -1,6 +1,6 @@
 import upath from './upath';
 import { createHash } from 'crypto';
-import { promptForPassword } from '../host';
+import { promptForPassword, showWarningMessage } from '../host';
 import logger from '../logger';
 import app from '../app';
 import { ConnectOption } from './remote-client/remoteClient';
@@ -23,6 +23,21 @@ function canonicalOption(value: any): any {
 
 export function hashOption(option): string {
   return createHash('sha256').update(JSON.stringify(canonicalOption(option))).digest('hex');
+}
+
+const warnedPlainFtp = new Set<string>();
+
+// FTP without TLS sends the username, password and file contents unencrypted.
+export function warnIfPlainFtp(option: { protocol?: string; host?: string; port?: number; secure?: any }) {
+  if (option.protocol !== 'ftp' || option.secure) return;
+  const server = `${option.host}:${option.port || 21}`;
+  if (warnedPlainFtp.has(server)) return;
+  warnedPlainFtp.add(server);
+  logger.warn(`FTP connection to ${server} is not encrypted ("secure" is not set)`);
+  showWarningMessage(
+    `SFTP Xavi: ${server} uses FTP without encryption, so your password and files are sent in plain text. ` +
+      'Set "secure" in sftp.json (or use SFTP) to protect them.'
+  );
 }
 
 class KeepAliveRemoteFs {
@@ -74,6 +89,7 @@ class KeepAliveRemoteFs {
         logger.debug(`${log[1]} ${log[2]}`);
       };
       FsConstructor = FTPFileSystem;
+      warnIfPlainFtp(option);
     } else {
       throw new Error(`unsupported protocol ${option.protocol}`);
     }

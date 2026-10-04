@@ -52,3 +52,20 @@ test('shared connections stay open until their last service releases them', asyn
   releaseRemoteFs(opts);
   expect(end).toHaveBeenCalledTimes(1);
 });
+
+test('plain FTP warns once per server, while encrypted FTP and SFTP do not', () => {
+  jest.resetModules();
+  const showWarningMessage = jest.fn();
+  jest.doMock('../src/host', () => ({ promptForPassword: jest.fn(), showWarningMessage }));
+  const { warnIfPlainFtp } = require('../src/core/remoteFs');
+  warnIfPlainFtp({ protocol: 'sftp', host: 'a' });
+  warnIfPlainFtp({ protocol: 'ftp', host: 'a', secure: true });
+  warnIfPlainFtp({ protocol: 'ftp', host: 'a', secure: 'control' });
+  expect(showWarningMessage).not.toHaveBeenCalled();
+  warnIfPlainFtp({ protocol: 'ftp', host: 'a', secure: false });
+  warnIfPlainFtp({ protocol: 'ftp', host: 'a', port: 21 });
+  expect(showWarningMessage).toHaveBeenCalledTimes(1);
+  expect(showWarningMessage.mock.calls[0][0]).toContain('a:21');
+  warnIfPlainFtp({ protocol: 'ftp', host: 'b' });
+  expect(showWarningMessage).toHaveBeenCalledTimes(2);
+});

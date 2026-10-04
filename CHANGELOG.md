@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Connecting to an FTP server without `secure` set now shows a warning, once per server per session, that the password and files travel unencrypted.
 * Downloads and syncs from a server can no longer overwrite the local `.vscode/sftp.json`, which uploads already skipped. A compromised server could otherwise change the connection settings, including `sshCustomParams`.
 * The extension no longer runs in untrusted workspaces. A cloned repository can supply its own `.vscode/sftp.json`, so connecting to its server, upload on save, and `sshCustomParams` now wait until you trust the workspace.
 
