@@ -234,7 +234,7 @@ async function _sync(
       id: fileEntry.name,
     }));
 
-    const file2trans: [string, string, TransferDirection, InternalTransferOption][] = [];
+    const file2trans: [string, string, TransferDirection, InternalTransferOption, FileType][] = [];
     const dir2trans: [string, string, TransferDirection][] = [];
     const dir2sync: [string, string][] = [];
 
@@ -288,6 +288,7 @@ async function _sync(
                   mtime: from.mtime,
                   atime: from.atime,
                 },
+                from.type,
               ]);
             }
             break;
@@ -319,6 +320,7 @@ async function _sync(
               mtime: srcFile.mtime,
               atime: srcFile.atime,
             },
+            srcFile.type,
           ]);
           break;
         default:
@@ -348,6 +350,7 @@ async function _sync(
                   mtime: file.mtime,
                   atime: file.atime,
                 },
+                file.type,
               ]);
               break;
             default:
@@ -384,11 +387,11 @@ async function _sync(
       targetFs: direction === transferDirection ? targetFs : srcFs,
     });
 
-    for (const [src, target, direction, option] of file2trans) {
+    for (const [src, target, direction, option, type] of file2trans) {
       await transferFile({
         ...directedConfig(direction), transferOption: option,
         srcFsPath: src, targetFsPath: target,
-      }, FileType.File, collect);
+      }, type, collect);
     }
     for (const [src, target, direction] of dir2trans) {
       await transferFolder({

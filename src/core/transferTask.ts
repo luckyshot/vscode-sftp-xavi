@@ -5,6 +5,7 @@ import * as fileOperations from './fileBaseOperations';
 import { FileSystem, FileType } from './fs';
 import { Task } from './scheduler';
 import logger from '../logger';
+import { isProtectedConfigPath } from './ignore';
 
 let hasWarnedModifedTimePermission = false;
 const fileQueues = new WeakMap<FileSystem, Map<string, { queue: SerialQueue; users: number }>>();
@@ -127,6 +128,14 @@ export default class TransferTask implements Task {
         finally { if (--entry.users === 0) queues.delete(target); }
         break;
       case FileType.SymbolicLink:
+        if (this._transferDirection === TransferDirection.LOCAL_TO_REMOTE) {
+          const linkTarget = await srcFs.readlink(src);
+          const resolved = srcFs.pathResolver.resolve(srcFs.pathResolver.dirname(src), linkTarget);
+          if (isProtectedConfigPath(resolved)) {
+            logger.warn(`Skipping symlink to protected configuration: ${src}`);
+            return;
+          }
+        }
         await fileOperations.transferSymlink(
           src,
           target,
@@ -173,6 +182,8 @@ export default class TransferTask implements Task {
     let sourceError: Error | undefined;
     const onSourceError = (error: Error) => { sourceError = error; };
     try {
+      const sourceStat = await srcFs.lstat(src);
+      if (sourceStat.type !== FileType.File) throw new Error(`Source changed type before transfer: ${src}`);
       this._handle = await srcFs.get(src);
       this._handle.on('error', onSourceError);
       if (mode === undefined && perserveTargetMode) {

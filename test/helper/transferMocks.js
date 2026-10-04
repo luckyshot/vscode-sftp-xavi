@@ -10,6 +10,7 @@ const filesystem = (entries = []) => ({
   put: jest.fn().mockResolvedValue(), close: jest.fn().mockResolvedValue(),
   futimes: jest.fn().mockResolvedValue(), fstat: jest.fn().mockResolvedValue({ mode: 0o644 }),
   lstat: jest.fn().mockResolvedValue({ mode: 0o644, type: FileType.File }),
+  readlink: jest.fn().mockResolvedValue('target'), symlink: jest.fn().mockResolvedValue(),
   chmod: jest.fn().mockResolvedValue(), rename: jest.fn().mockResolvedValue(),
   renameAtomic: jest.fn().mockResolvedValue(),
 });
