@@ -96,7 +96,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
     const fileStat = stats.find(ns => ns.name === nameIdentity);
 
     if (!fileStat) {
-      throw new Error('file not exist');
+      throw Object.assign(new Error('file not exist'), { code: 'ENOENT' });
     }
 
     return fileStat;

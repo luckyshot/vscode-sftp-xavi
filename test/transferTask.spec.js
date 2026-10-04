@@ -30,3 +30,33 @@ test('local reads reject missing files before handing a stream to a transfer', a
   const localFs = require('../src/core/localFs').default;
   await expect(localFs.get('/private/tmp/sftp-xavi-review-missing/source')).rejects.toMatchObject({ code: 'ENOENT' });
 });
+
+test('uses unique temporary files, closes before replacement, and leaves .new untouched', async () => {
+  const src = filesystem(), dst = filesystem();
+  await Promise.all([task(src, dst, { useTempFile: true }).run(), task(src, dst, { useTempFile: true }).run()]);
+  const paths = dst.open.mock.calls.map(([p]) => p);
+  expect(new Set(paths).size).toBe(2);
+  expect(paths.every(p => p.startsWith('/remote/a.sftp-xavi-') && p.endsWith('.tmp'))).toBe(true);
+  expect(dst.open.mock.calls.every(([, flags]) => flags === 'wx')).toBe(true);
+  expect(dst.unlink).not.toHaveBeenCalledWith('/remote/a');
+  expect(dst.unlink).not.toHaveBeenCalledWith('/remote/a.new');
+  expect(dst.close.mock.invocationCallOrder[0]).toBeLessThan(dst.renameAtomic.mock.invocationCallOrder[0]);
+});
+test('restores the original when non-atomic replacement fails', async () => {
+  const src = filesystem(), dst = filesystem();
+  dst.renameAtomic.mockRejectedValue(Object.assign(new Error('unsupported'), { code: 8 }));
+  dst.rename.mockImplementation(async from => { if (from.endsWith('.tmp')) throw new Error('rename failed'); });
+  await expect(task(src, dst, { useTempFile: true }).run()).rejects.toThrow('rename failed');
+  const backup = dst.rename.mock.calls[0][1];
+  expect(dst.rename.mock.calls[0][0]).toBe('/remote/a');
+  expect(dst.rename).toHaveBeenLastCalledWith(backup, '/remote/a');
+  expect(dst.unlink).not.toHaveBeenCalledWith('/remote/a');
+  expect(dst.unlink).not.toHaveBeenCalledWith(backup);
+});
+test('atomic-only failures preserve the original without fallback', async () => {
+  const src = filesystem(), dst = filesystem();
+  dst.renameAtomic.mockRejectedValue(new Error('rename failed'));
+  await expect(task(src, dst, { useTempFile: true, openSsh: true }).run()).rejects.toThrow('rename failed');
+  expect(dst.rename).not.toHaveBeenCalled();
+  expect(dst.unlink).not.toHaveBeenCalledWith('/remote/a');
+});
