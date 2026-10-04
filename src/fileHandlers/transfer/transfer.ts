@@ -11,6 +11,7 @@ import { FileHandleOption } from '../option';
 import logger from '../../logger';
 import { getOpenTextDocuments } from '../../host';
 import { isProtectedConfigPath } from '../../core/ignore';
+import { entryPath, validateEntries } from '../../core/entryPath';
 
 interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {}
 
@@ -90,13 +91,14 @@ async function transferFolder(
   }
 
   const fileEntries = await srcFs.list(srcFsPath);
+  validateEntries(fileEntries, srcFs.pathResolver, srcFsPath);
   // Walk directories sequentially so recursion cannot multiply pending requests.
   for (const file of fileEntries) {
     await transferWithType({
       ...config,
       transferOption: { ...config.transferOption, mtime: file.mtime, atime: file.atime },
       srcFsPath: file.fspath,
-      targetFsPath: targetFs.pathResolver.join(targetFsPath, file.name),
+      targetFsPath: entryPath(targetFs.pathResolver, targetFsPath, file.name),
       ensureDirExist: false,
     }, file.type, collect);
   }
@@ -188,6 +190,7 @@ async function removeFile(file: string, fs: FileSystem, fileType: FileType, opti
   switch (fileType) {
     case FileType.Directory:
       const children = await fs.list(file);
+      validateEntries(children, fs.pathResolver, file);
       let canRemove = true;
       for (const child of children) {
         if (!await removeFile(child.fspath, fs, child.type, option)) {
@@ -299,7 +302,7 @@ async function _sync(
         return;
       }
 
-      const fspath = targetFs.pathResolver.join(targetFsPath, srcFile.name);
+      const fspath = entryPath(targetFs.pathResolver, targetFsPath, srcFile.name);
       switch (srcFile.type) {
         case FileType.Directory:
           dir2trans.push([srcFile.fspath, fspath, transferDirection]);
@@ -328,7 +331,7 @@ async function _sync(
       if (transferOption.skipCreate !== true) {
         Object.keys(desFileTable).forEach(id => {
           const file = desFileTable[id];
-          const fspath = srcFs.pathResolver.join(srcFsPath, file.name);
+          const fspath = entryPath(srcFs.pathResolver, srcFsPath, file.name);
           switch (file.type) {
             case FileType.Directory:
               dir2trans.push([file.fspath, fspath, altDirection]);
@@ -404,6 +407,8 @@ async function _sync(
     srcFs.list(srcFsPath),
     targetFs.list(targetFsPath),
   ]);
+  validateEntries(files[0], srcFs.pathResolver, srcFsPath);
+  validateEntries(files[1], targetFs.pathResolver, targetFsPath);
   await syncFiles(...files);
 }
 

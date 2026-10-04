@@ -1,3 +1,4 @@
+import { entryPath } from '../entryPath';
 import SerialQueue from '../serialQueue';
 import { Readable } from 'stream';
 import logger from '../../logger';
@@ -255,7 +256,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
         // we simply ignore it by check whether it has a name property
         .filter(item => item.name && item.name !== '.' && item.name !== '..')
         .map(item =>
-          this.toFileEntry(this.pathResolver.join(dir, item.name), item)
+          this.toFileEntry(entryPath(this.pathResolver, dir, item.name), item)
         )
     );
   }

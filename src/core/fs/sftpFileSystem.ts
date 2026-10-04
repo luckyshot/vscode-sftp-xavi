@@ -1,3 +1,4 @@
+import { entryPath } from '../entryPath';
 import { Readable, Writable } from 'stream';
 import FileSystem, {
   FileEntry,
@@ -323,10 +324,9 @@ export default class SFTPFileSystem extends RemoteFileSystem {
           return;
         }
 
-        const fileEntries = result.map(item =>
-          this.toFileEntry(this.pathResolver.join(dir, item.filename), item)
-        );
-        resolve(fileEntries);
+        try {
+          resolve(result.map(item => this.toFileEntry(entryPath(this.pathResolver, dir, item.filename), item)));
+        } catch (error) { reject(error); }
       });
     });
   }
