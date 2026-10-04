@@ -6,7 +6,7 @@ const path = require('path');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
-  target: 'node',
+  target: 'node20',
 
   entry: './src/extension.ts',
   output: {

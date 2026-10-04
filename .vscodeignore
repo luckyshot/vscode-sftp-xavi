@@ -1,7 +1,11 @@
 *
 */**
 **/.DS_Store
-!node_modules/**/*
+!node_modules/ssh2/**/*
+!node_modules/asn1/**/*
+!node_modules/bcrypt-pbkdf/**/*
+!node_modules/safer-buffer/**/*
+!node_modules/tweetnacl/**/*
 !dist/extension.js
 !package.json
 !README.md
@@ -9,3 +13,4 @@
 !LICENSE
 !resources/**/*
 !schema/**/*
+node_modules/ssh2/lib/protocol/crypto/build/**

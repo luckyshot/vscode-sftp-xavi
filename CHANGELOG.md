@@ -1,4 +1,7 @@
 ## Unreleased
+* Require VS Code 1.100 or newer; development tools require Node.js 22.14 or newer.
+* Modernize TypeScript, webpack, Jest and ESLint; upgrade configuration, filesystem, ignore and cache libraries and remove unused dependencies.
+* Simplify serialized FTP operations, update development and CI workflows, and exclude duplicate bundled libraries from the extension package.
 * Prevent uploading .vscode/sftp.json credentials, including nested configurations, empty ignore lists, negated patterns and Force Upload (upstream #337, #540, #576).
 * Fix ignore rules for Windows drive/UNC casing and overlapping local/remote path prefixes. Upload Changed Files now excludes ignored changes from its actions and summary, waits for transfers, and catches asynchronous failures (upstream #577).
 * Fix upload-on-save losing its configuration when Windows drive/UNC casing or a symlink differs from the workspace path (upstream #363, #397, #589). Map local paths without synchronous realpath calls or treating path strings as URIs.
