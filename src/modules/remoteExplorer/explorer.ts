@@ -5,6 +5,8 @@ import {
   COMMAND_REMOTEEXPLORER_REFRESH,
   COMMAND_REMOTEEXPLORER_REFRESH_ACTIVE_FILE,
   COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
+  COMMAND_REMOTEEXPLORER_COMPARE,
+  COMMAND_REMOTEEXPLORER_CHECK_CONTENT,
 } from '../../constants';
 import { UResource } from '../../core';
 import { toRemotePath } from '../../helper';
@@ -22,6 +24,11 @@ export default class RemoteExplorer {
       vscode.workspace.registerTextDocumentContentProvider(REMOTE_SCHEME, this._treeDataProvider)
     );
 
+    context.subscriptions.push(
+      vscode.window.registerFileDecorationProvider(this._treeDataProvider.decorations),
+      this._treeDataProvider.decorations
+    );
+
     this._explorerView = vscode.window.createTreeView(REMOTE_EXPLORER_VIEW_ID, {
       showCollapseAll: true,
       treeDataProvider: this._treeDataProvider,
@@ -32,6 +39,12 @@ export default class RemoteExplorer {
     registerCommand(context, COMMAND_REMOTEEXPLORER_REFRESH_ACTIVE_FILE, () => this._refreshActiveRemoteFile());
     registerCommand(context, COMMAND_REMOTEEXPLORER_VIEW_CONTENT, (item: ExplorerItem) =>
       this._treeDataProvider.showItem(item)
+    );
+    registerCommand(context, COMMAND_REMOTEEXPLORER_COMPARE, (item: ExplorerItem) =>
+      this._treeDataProvider.compareWithLocal(item)
+    );
+    registerCommand(context, COMMAND_REMOTEEXPLORER_CHECK_CONTENT, (item: ExplorerItem) =>
+      this._treeDataProvider.checkContent(item)
     );
   }
 
@@ -48,7 +61,7 @@ export default class RemoteExplorer {
       }
       const config = fileService.getConfig();
       const localPath = item.resource.fsPath;
-      const remotePath = toRemotePath(localPath, config.context, config.remotePath);
+      const remotePath = toRemotePath(localPath, fileService.baseDir, config.remotePath);
       item.resource = UResource.makeResource({
         remote: {
           host: config.host,

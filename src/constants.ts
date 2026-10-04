@@ -63,6 +63,8 @@ export const COMMAND_REMOTEEXPLORER_REFRESH = 'sftpXavi.remoteExplorer.refresh';
 export const COMMAND_REMOTEEXPLORER_REFRESH_ACTIVE_FILE = "sftpXavi.remoteExplorer.refreshActiveFile"
 export const COMMAND_REMOTEEXPLORER_EDITINLOCAL = 'sftpXavi.remoteExplorer.editInLocal';
 export const COMMAND_REMOTEEXPLORER_VIEW_CONTENT = 'sftpXavi.viewContent';
+export const COMMAND_REMOTEEXPLORER_COMPARE = 'sftpXavi.remoteExplorer.compareWithLocal';
+export const COMMAND_REMOTEEXPLORER_CHECK_CONTENT = 'sftpXavi.remoteExplorer.checkContent';
 
 export const COMMAND_CREATE_FOLDER = 'sftpXavi.create.folder';
 export const COMMAND_CREATE_FILE = 'sftpXavi.create.file';

@@ -7,19 +7,29 @@ import {
   FileService,
   FileType,
   FileEntry,
+  FileStats,
   Ignore,
   ServiceConfig,
 } from '../../core';
 import {
   COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
   COMMAND_REMOTEEXPLORER_EDITINLOCAL,
+  COMMAND_REMOTEEXPLORER_COMPARE,
 } from '../../constants';
 import { getAllFileService } from '../serviceManager';
 import { getExtensionSetting } from '../ext';
+import { toLocalPath } from '../../helper';
+import mapConcurrent from '../../core/mapConcurrent';
+import ListingCache from './listingCache';
+import SyncDecorationProvider, { DecorationInfo } from './decorationProvider';
+import { SyncState, CompareResult, compareEntries, stateLabel, summarizeDecoration } from './syncState';
 
 type Id = number;
 
 const previewDocumentPathPrefix = '/~ ';
+
+const LISTING_TTL_MS = 30 * 1000;
+const LOCAL_STAT_CONCURRENCY = 16;
 
 const DEFAULT_FILES_EXCLUDE = ['.git', '.svn', '.hg', 'CVS', '.DS_Store'];
 /**
@@ -63,11 +73,52 @@ function dirFirstSort(fileA: ExplorerItem, fileB: ExplorerItem) {
   return fileA.isDirectory ? -1 : 1;
 }
 
+function trimTrailingSlash(p: string) {
+  return p.length > 1 ? p.replace(/\/+$/, '') : p;
+}
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let value = bytes / 1024;
+  let i = 0;
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024;
+    i++;
+  }
+  return `${value.toFixed(value < 10 ? 1 : 0)} ${units[i]}`;
+}
+
+function formatAge(mtime: number, now = Date.now()) {
+  const secs = Math.max(0, Math.round((now - mtime) / 1000));
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(mtime).toISOString().slice(0, 10);
+}
+
+interface ItemMeta {
+  entry: FileEntry;
+  local: FileStats | null;
+  result: CompareResult;
+  /** The verdict came from comparing contents, so it outlives a refresh while neither side changes. */
+  checked?: boolean;
+}
+
 export default class RemoteTreeData
   implements vscode.TreeDataProvider<ExplorerItem>, vscode.TextDocumentContentProvider {
   private _roots: ExplorerRoot[] | null;
   private _rootsMap: Map<Id, ExplorerRoot> | null;
   private _map: Map<vscode.Uri['query'], ExplorerItem>;
+  private _listings = new ListingCache<FileEntry[]>(LISTING_TTL_MS);
+  /** Compare results keyed by `uri.toString()`. */
+  private _meta = new Map<string, ItemMeta>();
+  private _folderDiffs = new Map<string, number>();
+  readonly decorations = new SyncDecorationProvider(uri => this._decorationFor(uri));
 
   private _onDidChangeFolder: vscode.EventEmitter<ExplorerItem | undefined> = new vscode.EventEmitter<
     ExplorerItem | undefined
@@ -82,11 +133,15 @@ export default class RemoteTreeData
       // clear cache
       this._roots = null;
       this._rootsMap = null;
+      this._listings.clear();
+      this._meta.clear();
+      this._folderDiffs.clear();
 
       this._onDidChangeFolder.fire(undefined);
       return;
     }
 
+    this._listings.invalidate(this._listingKey(item));
     if (item.isDirectory) {
       this._onDidChangeFolder.fire(item);
 
@@ -98,6 +153,7 @@ export default class RemoteTreeData
     } else {
       const parent = await this.getParent(item);
       if (parent) {
+        this._listings.invalidate(this._listingKey(parent));
         this._onDidChangeFolder.fire(parent);
       }
       this._onDidChangeFile.fire(makePreivewUrl(item.resource.uri));
@@ -113,21 +169,31 @@ export default class RemoteTreeData
     if (!customLabel) {
       customLabel = upath.basename(item.resource.fsPath);
     }
-    return {
+    const meta = this._meta.get(item.resource.uri.toString());
+    const state = meta?.result.state;
+    const treeItem: vscode.TreeItem = {
+      // Stable ids keep expansion state across refreshes.
+      id: item.resource.uri.query,
       label: customLabel,
       resourceUri: item.resource.uri,
       collapsibleState: item.isDirectory ? vscode.TreeItemCollapsibleState.Collapsed : undefined,
-      contextValue: isRoot ? 'root' : item.isDirectory ? 'folder' : 'file',
-      command: item.isDirectory
-        ? undefined
-        : {
-            command: getExtensionSetting().downloadWhenOpenInRemoteExplorer
-              ? COMMAND_REMOTEEXPLORER_EDITINLOCAL
-              : COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
-            arguments: [item],
-            title: 'View Remote Resource',
-          },
+      contextValue: isRoot ? 'root' : item.isDirectory ? 'folder' : `file.${state ?? SyncState.Unknown}`,
     };
+    if (!item.isDirectory) {
+      treeItem.description = meta ? `${formatSize(meta.entry.size)} · ${formatAge(meta.entry.mtime)}` : undefined;
+      treeItem.tooltip = meta ? this._fileTooltip(item, meta) : undefined;
+      treeItem.command =
+        state === SyncState.Modified
+          ? { command: COMMAND_REMOTEEXPLORER_COMPARE, arguments: [item], title: 'Compare with Local' }
+          : {
+              command: getExtensionSetting().downloadWhenOpenInRemoteExplorer
+                ? COMMAND_REMOTEEXPLORER_EDITINLOCAL
+                : COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
+              arguments: [item],
+              title: 'View Remote Resource',
+            };
+    }
+    return treeItem;
   }
 
   async getChildren(item?: ExplorerItem): Promise<ExplorerItem[]> {
@@ -141,7 +207,12 @@ export default class RemoteTreeData
     }
     const config = root.explorerContext.config;
     const remotefs = await root.explorerContext.fileService.getRemoteFileSystem(config);
-    const fileEntries = await remotefs.list(item.resource.fsPath);
+    const listingKey = this._listingKey(item);
+    let fileEntries = this._listings.get(listingKey);
+    if (!fileEntries) {
+      fileEntries = await remotefs.list(item.resource.fsPath);
+      this._listings.set(listingKey, fileEntries);
+    }
 
     const filesExcludeList: string[] =
       config.remoteExplorer && config.remoteExplorer.filesExclude
@@ -154,8 +225,50 @@ export default class RemoteTreeData
       return !ignore.ignores(relativePath);
     }
 
-    return fileEntries
-      .filter(filterFile)
+    const visible = fileEntries.filter(filterFile);
+    const localFs = root.explorerContext.fileService.getLocalFileSystem();
+    const compareMtime = config.protocol !== 'ftp';
+    const metas = await mapConcurrent(visible, LOCAL_STAT_CONCURRENCY, async entry => {
+      const localPath = toLocalPath(entry.fspath, config.remotePath, root.explorerContext.fileService.baseDir);
+      const local = await localFs.lstat(localPath).catch(() => null);
+      const isDir = entry.type === FileType.Directory;
+      let result: CompareResult = compareEntries(
+        local && { isDirectory: local.type === FileType.Directory, size: local.size, mtime: local.mtime },
+        { isDirectory: isDir, size: entry.size, mtime: entry.mtime },
+        { compareMtime, mtimeToleranceSeconds: getExtensionSetting().get<number>('mtimeToleranceSeconds', 5) }
+      );
+      // sync commands skip ignored paths in both directions, so don't flag them as differences
+      if (result.state !== SyncState.Unknown && config.ignore && config.ignore(localPath)) {
+        result = { state: SyncState.Ignored };
+      }
+      return { entry, local, result } as ItemMeta;
+    });
+
+    const folderKey = item.resource.uri.toString();
+    let differing = 0;
+    const changed: vscode.Uri[] = [];
+    for (const meta of metas) {
+      const uri = UResource.updateResource(item.resource, { remotePath: meta.entry.fspath }).uri;
+      const key = uri.toString();
+      const prev = this._meta.get(key);
+      if (!prev || prev.result.state !== meta.result.state) changed.push(uri);
+      const verdictStillValid =
+        prev?.checked &&
+        prev.entry.size === meta.entry.size &&
+        prev.entry.mtime === meta.entry.mtime &&
+        prev.local?.size === meta.local?.size &&
+        prev.local?.mtime === meta.local?.mtime;
+      this._meta.set(key, verdictStillValid ? prev : meta);
+      const { state } = this._meta.get(key)!.result;
+      if (state !== SyncState.Same && state !== SyncState.Ignored) differing++;
+    }
+    if (this._folderDiffs.get(folderKey) !== differing) {
+      this._folderDiffs.set(folderKey, differing);
+      changed.push(item.resource.uri);
+    }
+    if (changed.length) this.decorations.fire(changed);
+
+    return visible
       .map(file => {
         const isDirectory = file.type === FileType.Directory;
         const newResource = UResource.updateResource(item.resource, {
@@ -185,11 +298,15 @@ export default class RemoteTreeData
       throw new Error(`Can't find config for remote resource ${resourceUri}.`);
     }
 
-    if (item.resource.fsPath === root.resource.fsPath) {
+    if (trimTrailingSlash(item.resource.fsPath) === trimTrailingSlash(root.resource.fsPath)) {
       return root;
     }
 
     const fspath = upath.dirname(item.resource.fsPath);
+    // remotePath is often configured with a trailing slash ("/var/www/"), but dirname() drops it
+    if (trimTrailingSlash(fspath) === trimTrailingSlash(root.resource.fsPath)) {
+      return root;
+    }
     const newResource = UResource.updateResource(item.resource, {
       remotePath: fspath,
     });
@@ -241,6 +358,87 @@ export default class RemoteTreeData
     } finally {
       cancellation.dispose();
     }
+  }
+
+  private _listingKey(item: ExplorerItem) {
+    return `${UResource.makeResource(item.resource.uri).remoteId}:${item.resource.fsPath}`;
+  }
+
+  private _fileTooltip(item: ExplorerItem, meta: ItemMeta) {
+    const lines = [stateLabel(meta.result), `Remote: ${formatSize(meta.entry.size)}, ${new Date(meta.entry.mtime).toLocaleString()}`];
+    if (meta.local) lines.push(`Local: ${formatSize(meta.local.size)}, ${new Date(meta.local.mtime).toLocaleString()}`);
+    return lines.join('\n');
+  }
+
+  private _decorationFor(uri: vscode.Uri): DecorationInfo | undefined {
+    const key = uri.toString();
+    return summarizeDecoration(this._meta.get(key)?.result, this._folderDiffs.get(key));
+  }
+
+  /** Metadata for the compare commands; undefined until the parent folder has been listed. */
+  getMeta(item: ExplorerItem): ItemMeta | undefined {
+    return this._meta.get(item.resource.uri.toString());
+  }
+
+  /** Local file system path matching a remote item. */
+  getLocalPath(item: ExplorerItem): string | undefined {
+    const root = this.findRoot(item.resource.uri);
+    if (!root) return undefined;
+    const { config, fileService } = root.explorerContext;
+    return toLocalPath(item.resource.fsPath, config.remotePath, fileService.baseDir);
+  }
+
+  /** Open a diff of the remote file (left) against its local counterpart (right). */
+  async compareWithLocal(item: ExplorerItem): Promise<void> {
+    if (item.isDirectory) return;
+    const root = this.findRoot(item.resource.uri);
+    const localPath = this.getLocalPath(item);
+    const meta = this.getMeta(item);
+    // the status is unknown if the parent folder was never listed, so look at the disk
+    const existsLocally = meta
+      ? !!meta.local
+      : !!root && !!localPath && (await root.explorerContext.fileService.getLocalFileSystem().lstat(localPath).then(() => true, () => false));
+    if (!localPath || !existsLocally) {
+      vscode.window.showInformationMessage('This file does not exist locally.');
+      return;
+    }
+    const name = upath.basename(item.resource.fsPath);
+    await vscode.commands.executeCommand(
+      'vscode.diff',
+      makePreivewUrl(item.resource.uri),
+      vscode.Uri.file(localPath),
+      `${name} (remote ↔ local)`
+    );
+  }
+
+  /** Download both versions (bounded by maxRemotePreviewBytes) and compare their bytes. */
+  async checkContent(item: ExplorerItem): Promise<void> {
+    if (item.isDirectory) return;
+    const root = this.findRoot(item.resource.uri);
+    const localPath = this.getLocalPath(item);
+    const meta = this.getMeta(item);
+    if (!root || !localPath || !meta?.local) {
+      vscode.window.showInformationMessage('This file does not exist locally.');
+      return;
+    }
+    const maxBytes = getExtensionSetting().get<number>('maxRemotePreviewBytes', 10 * 1024 * 1024);
+    if (meta.entry.size > maxBytes) {
+      vscode.window.showWarningMessage(`File is larger than sftpXavi.maxRemotePreviewBytes (${maxBytes} bytes); use Compare or download it.`);
+      return;
+    }
+    const { config, fileService } = root.explorerContext;
+    const remotefs = await fileService.getRemoteFileSystem(config);
+    const [remote, local] = await Promise.all([
+      remotefs.readFile(item.resource.fsPath, { maxBytes }),
+      fileService.getLocalFileSystem().readFile(localPath, { maxBytes }),
+    ]);
+    const same = Buffer.compare(Buffer.from(remote), Buffer.from(local)) === 0;
+    const key = item.resource.uri.toString();
+    this._meta.set(key, { ...meta, checked: true, result: same ? { state: SyncState.Same } : { state: SyncState.Modified } });
+    this.decorations.fire(item.resource.uri);
+    const parent = await this.getParent(item);
+    this._onDidChangeFolder.fire(parent);
+    vscode.window.showInformationMessage(same ? 'Contents are identical.' : 'Contents differ.');
   }
 
   showItem(item: ExplorerItem): void {
