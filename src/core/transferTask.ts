@@ -128,49 +128,20 @@ export default class TransferTask implements Task {
     } = this._TransferOption;
     // Set the mode if it's specified in the config, otherwise get mode from server.
     let mode = filePerm ? parseInt(String(filePerm), 8) : this._TransferOption.mode;
-    let targetFd; // Destination file
     let uploadFd; // Temp file or destination file when no temp file is used
     const uploadTarget = target + (useTempFile ? ".new" : "");
 
-    // Use mode first.
-    // Then check perserveTargetMode and fallback to fallbackMode if fail to get mode of target
-    if (mode === undefined && perserveTargetMode) {
-      if (useTempFile) {
-        [targetFd, uploadFd] = await Promise.all([
-          targetFs.open(target, 'r')  // Get handle for reading the target mode
-            .catch(() => null), // Return null if target file doesn't exist
-          targetFs.open(uploadTarget, 'w')  // Get handle for the file upload
-        ]);
-      } else {
-        targetFd = uploadFd = await targetFs.open(uploadTarget, 'w');
-      }
-
-      if (targetFd) {
-        [this._handle, mode] = await Promise.all([
-          srcFs.get(src),
-          targetFs
-            .fstat(targetFd)
-            .then(stat => stat.mode)
-            .catch(() => fallbackMode),
-        ]);
-
-        if (useTempFile) {
-          targetFs.close(targetFd);
-        }
-
-      } else {
-        this._handle = await srcFs.get(src);
-        mode = fallbackMode;
-      }
-
-    } else {
-      [this._handle, uploadFd] = await Promise.all([
-        srcFs.get(src),
-        targetFs.open(uploadTarget, 'w'),
-      ]);
-    }
-
+    let sourceError: Error | undefined;
+    const onSourceError = (error: Error) => { sourceError = error; };
     try {
+      this._handle = await srcFs.get(src);
+      this._handle.on('error', onSourceError);
+      if (mode === undefined && perserveTargetMode) {
+        mode = await targetFs.lstat(target).then(stat => stat.mode).catch(() => fallbackMode);
+      }
+      if (sourceError) throw sourceError;
+      uploadFd = await targetFs.open(uploadTarget, 'w');
+      if (sourceError) throw sourceError;
       if (useTempFile) {
         logger.info("uploading temp file: " + uploadTarget);
       }
@@ -211,7 +182,8 @@ export default class TransferTask implements Task {
       }
 
     } finally {
-      await targetFs.close(uploadFd);
+      this._handle?.destroy();
+      if (uploadFd !== undefined) await targetFs.close(uploadFd);
     }
   }
 }

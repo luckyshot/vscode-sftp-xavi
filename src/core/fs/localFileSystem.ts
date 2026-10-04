@@ -63,7 +63,8 @@ export default class LocalFileSystem extends FileSystem {
       try {
         const stream = fs.createReadStream(path, option);
         stream.once('error', reject);
-        resolve(stream);
+        if (typeof option?.fd === 'number') resolve(stream);
+        else stream.once('open', () => resolve(stream));
       } catch (err) {
         reject(err);
       }

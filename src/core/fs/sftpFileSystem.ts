@@ -181,7 +181,9 @@ export default class SFTPFileSystem extends RemoteFileSystem {
       try {
         // const stream = this.sftp.createReadStream(path, opt);
         const stream = this.sftp.createReadStream(path, option);
-        resolve(stream);
+        stream.once('error', reject);
+        if (stream.handle) resolve(stream);
+        else stream.once('ready', () => resolve(stream));
       } catch (err) {
         reject(err);
       }
