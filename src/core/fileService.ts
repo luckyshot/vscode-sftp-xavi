@@ -350,6 +350,8 @@ export default class FileService {
   private _profiles: string[];
   private _pendingTransferTasks: Set<TransferTask> = new Set();
   private _transferSchedulers: TransferScheduler[] = [];
+  private _sharedTransferScheduler = new Scheduler({ concurrency: 4 });
+  private _activeConcurrency = new Map<TransferScheduler, number>();
   private _config: FileServiceConfig;
   private _configValidator: ConfigValidator;
   private _watcherService: WatcherService = {
@@ -428,63 +430,50 @@ export default class FileService {
   }
 
   createTransferScheduler(concurrency): TransferScheduler {
-    const fileService = this;
-    const scheduler = new Scheduler({
-      autoStart: false,
-      concurrency,
-    });
-    scheduler.onTaskStart(task => {
-      this._pendingTransferTasks.add(task as TransferTask);
-      this._eventEmitter.emit(Event.BEFORE_TRANSFER, task);
-    });
-    scheduler.onTaskDone((err, task) => {
-      this._pendingTransferTasks.delete(task as TransferTask);
-      this._eventEmitter.emit(Event.AFTER_TRANSFER, err, task);
-    });
-
-    let runningPromise: Promise<void> | null = null;
-    let isStopped: boolean = false;
-    const transferScheduler: TransferScheduler = {
-      get size() {
-        return scheduler.size;
-      },
-      stop() {
-        isStopped = true;
-        scheduler.empty();
-      },
-      add(task: TransferTask) {
-        if (isStopped) {
-          return;
-        }
-
-        scheduler.add(task);
-      },
-      run() {
-        if (isStopped) {
+    if (!Number.isInteger(concurrency) || concurrency < 1) throw new Error('concurrency must be a positive integer');
+    const tasks: TransferTask[] = [];
+    let stopped = false;
+    let running: Promise<void> | undefined;
+    const batch: TransferScheduler = {
+      get size() { return tasks.length; },
+      stop: () => { stopped = true; tasks.length = 0; },
+      add: task => { if (!stopped) tasks.push(task); },
+      run: () => {
+        if (running) return running;
+        if (stopped || !tasks.length) {
+          this._removeScheduler(batch);
           return Promise.resolve();
         }
-
-        if (scheduler.size <= 0) {
-          fileService._removeScheduler(transferScheduler);
-          return Promise.resolve();
-        }
-
-        if (!runningPromise) {
-          runningPromise = new Promise(resolve => {
-            scheduler.onIdle(() => {
-              runningPromise = null;
-              fileService._removeScheduler(transferScheduler);
-              resolve();
-            });
-            scheduler.start();
+        this._activeConcurrency.set(batch, concurrency);
+        this._sharedTransferScheduler.setConcurrency(Math.min(...this._activeConcurrency.values()));
+        running = Promise.all(tasks.splice(0).map(task => new Promise<void>(resolve => {
+          this._sharedTransferScheduler.add(async () => {
+            if (stopped) { resolve(); return; }
+            let error: Error | null = null;
+            this._pendingTransferTasks.add(task);
+            try {
+              this._eventEmitter.emit(Event.BEFORE_TRANSFER, task);
+              await task.run();
+            } catch (failure) { error = failure; }
+            finally {
+              this._pendingTransferTasks.delete(task);
+              try { this._eventEmitter.emit(Event.AFTER_TRANSFER, error, task); }
+              finally { resolve(); }
+            }
           });
-        }
-        return runningPromise;
+        }))).then(() => undefined).finally(() => {
+          this._activeConcurrency.delete(batch);
+          this._removeScheduler(batch);
+          if (this._activeConcurrency.size) {
+            this._sharedTransferScheduler.setConcurrency(Math.min(...this._activeConcurrency.values()));
+          }
+          running = undefined;
+        });
+        return running;
       },
     };
-    fileService._storeScheduler(transferScheduler);
-
-    return transferScheduler;
+    this._storeScheduler(batch);
+    return batch;
   }
 
   getLocalFileSystem(): FileSystem {

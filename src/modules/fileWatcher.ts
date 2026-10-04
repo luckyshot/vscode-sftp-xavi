@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import SerialQueue from '../core/serialQueue';
 import debounce from 'lodash.debounce';
 import logger from '../logger';
 import { isValidFile, fileDepth } from '../helper';
@@ -12,14 +14,24 @@ const watchers: {
   [x: string]: vscode.FileSystemWatcher;
 } = {};
 
-const uploadQueue = new Set<vscode.Uri>();
-const deleteQueue = new Set<vscode.Uri>();
+const uploadQueue = new Map<string, vscode.Uri>();
+const deleteQueue = new Map<string, vscode.Uri>();
+const pathQueues = new Map<string, { queue: SerialQueue; users: number }>();
+const pathKey = (uri: vscode.Uri) => process.platform === 'win32' ? uri.fsPath.toLowerCase() : uri.fsPath;
+async function forPath(uri: vscode.Uri, action: () => Promise<void>) {
+  const key = pathKey(uri);
+  let entry = pathQueues.get(key);
+  if (!entry) pathQueues.set(key, entry = { queue: new SerialQueue(), users: 0 });
+  entry.users++;
+  try { await entry.queue.add(action); }
+  finally { if (--entry.users === 0) pathQueues.delete(key); }
+}
 
 // less than 550 will not work
 const ACTION_INTEVAL = 550;
 
 function doUpload() {
-  const files = Array.from(uploadQueue).sort((a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath));
+  const files = Array.from(uploadQueue.values()).sort((a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath));
   uploadQueue.clear();
 
   const currentDownloadTasks = getRunningTransformTasks().filter(
@@ -35,7 +47,7 @@ function doUpload() {
     const fspath = uri.fsPath;
     logger.info(`[watcher/updated] ${fspath}`);
     try {
-      await upload(uri);
+      await forPath(uri, () => upload(uri));
     } catch (error) {
       logger.error(error, `upload ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
@@ -44,13 +56,13 @@ function doUpload() {
 }
 
 function doDelete() {
-  const files = Array.from(deleteQueue).sort((a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath));
+  const files = Array.from(deleteQueue.values()).sort((a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath));
   deleteQueue.clear();
   files.forEach(async uri => {
     const fspath = uri.fsPath;
     logger.info(`[watcher/removed] ${fspath}`);
     try {
-      await removeRemote(uri);
+      await forPath(uri, () => removeRemote(uri));
     } catch (error) {
       logger.error(error, `remove ${fspath}`);
       app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
@@ -58,15 +70,16 @@ function doDelete() {
   });
 }
 
-const debouncedUpload = debounce(doUpload, ACTION_INTEVAL, { leading: true, trailing: true });
-const debouncedDelete = debounce(doDelete, ACTION_INTEVAL, { leading: true, trailing: true });
+const debouncedUpload = debounce(doUpload, ACTION_INTEVAL, { leading: false, trailing: true, maxWait: 2000 });
+const debouncedDelete = debounce(doDelete, ACTION_INTEVAL, { leading: false, trailing: true, maxWait: 2000 });
 
 function uploadHandler(uri: vscode.Uri) {
   if (!isValidFile(uri)) {
     return;
   }
 
-  uploadQueue.add(uri);
+  deleteQueue.delete(pathKey(uri));
+  uploadQueue.set(pathKey(uri), uri);
   debouncedUpload();
 }
 
@@ -116,18 +129,26 @@ function createWatcher(
         return;
       }
 
-      deleteQueue.add(uri);
+      uploadQueue.delete(pathKey(uri));
+      deleteQueue.set(pathKey(uri), uri);
       debouncedDelete();
     });
   }
 }
 
 function removeWatcher(watcherBase: string) {
+  for (const queue of [uploadQueue, deleteQueue]) {
+    for (const [key, uri] of queue) {
+      const relative = path.relative(watcherBase, uri.fsPath);
+      if (relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative)) queue.delete(key);
+    }
+  }
   const watcher = getWatcher(watcherBase);
   if (watcher) {
     watcher.dispose();
     delete watchers[watcherBase];
   }
+  if (!Object.keys(watchers).length) { debouncedUpload.cancel(); debouncedDelete.cancel(); }
 }
 
 const watcherService: WatcherService = {

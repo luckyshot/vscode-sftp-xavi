@@ -102,7 +102,11 @@ class Scheduler {
   }
 
   setConcurrency(concurrency: number) {
+    if (!(concurrency >= 1)) throw new TypeError('concurrency must be at least 1');
     this._concurrency = concurrency;
+    while (!this._isPaused && this.size > 0 && this._pendingCount < concurrency) {
+      this._runTask(this._queue.dequeue());
+    }
   }
 
   add(task: Task | taskFunc, opt?: { priority: number }) {
