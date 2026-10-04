@@ -23,12 +23,13 @@ async function handleConfigSave(uri: vscode.Uri) {
 
   const workspacePath = workspaceFolder.uri.fsPath;
 
-  // dispose old service
-  findAllFileService(service => service.workspace === workspacePath).forEach(disposeFileService);
-
-  // create new service
   try {
+    // Parse the replacement before discarding working services.
     const configs = await readConfigsFromFile(uri.fsPath);
+    for (const service of findAllFileService(service => service.workspace === workspacePath)) {
+      try { disposeFileService(service); }
+      catch (error) { reportError(error); }
+    }
     configs.forEach(config => createFileService(config, workspacePath));
   } catch (error) {
     reportError(error);

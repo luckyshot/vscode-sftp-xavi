@@ -89,3 +89,16 @@ test('upload failures update the error status and identify the operation correct
   expect(logger.error).toHaveBeenCalledWith(error, `upload ${uri.fsPath}`);
   expect(app.sftpBarItem.updateStatus).toHaveBeenCalledWith('error');
 });
+test('invalid replacement JSON preserves current services', async () => {
+  const vscode = require('vscode');
+  const helper = require('../src/helper');
+  const services = require('../src/modules/serviceManager');
+  const configs = require('../src/modules/config');
+  helper.isConfigFile.mockReturnValueOnce(true);
+  vscode.workspace.getWorkspaceFolder.mockReturnValue({ uri: { fsPath: '/workspace' } });
+  configs.readConfigsFromFile.mockRejectedValueOnce(new Error('invalid JSON'));
+  onSave({ uri: { scheme: 'file', fsPath: '/workspace/.vscode/sftp.json' } });
+  await new Promise(setImmediate);
+  expect(services.disposeFileService).not.toHaveBeenCalled();
+  expect(helper.reportError).toHaveBeenCalledWith(expect.objectContaining({ message: 'invalid JSON' }));
+});

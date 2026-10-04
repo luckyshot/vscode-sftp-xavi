@@ -11,7 +11,7 @@ import upath from './upath';
 import Ignore, { isProtectedConfigPath } from './ignore';
 import { FileSystem } from './fs';
 import Scheduler from './scheduler';
-import { createRemoteIfNoneExist, removeRemoteFs } from './remoteFs';
+import { createRemoteIfNoneExist, hashOption, retainRemoteFs, releaseRemoteFs } from './remoteFs';
 import TransferTask from './transferTask';
 import localFs from './localFs';
 
@@ -352,6 +352,8 @@ export default class FileService {
   private _transferSchedulers: TransferScheduler[] = [];
   private _sharedTransferScheduler = new Scheduler({ concurrency: 4 });
   private _activeConcurrency = new Map<TransferScheduler, number>();
+  private _remoteOptions = new Map<string, any>();
+  private _disposed = false;
   private _config: FileServiceConfig;
   private _configValidator: ConfigValidator;
   private _watcherService: WatcherService = {
@@ -481,7 +483,13 @@ export default class FileService {
   }
 
   getRemoteFileSystem(config: ServiceConfig): Promise<FileSystem> {
-    return createRemoteIfNoneExist(getHostInfo(config));
+    if (this._disposed) return Promise.reject(new Error('File service has been disposed'));
+    const option = getHostInfo(config), identity = hashOption(option);
+    if (!this._remoteOptions.has(identity)) {
+      this._remoteOptions.set(identity, option);
+      retainRemoteFs(option);
+    }
+    return createRemoteIfNoneExist(option);
   }
 
   getConfig(useProfile = app.state.profile): ServiceConfig {
@@ -521,8 +529,11 @@ export default class FileService {
   }
 
   dispose() {
-    this._disposeWatcher();
-    this._disposeFileSystem();
+    if (this._disposed) return;
+    this._disposed = true;
+    this.cancelTransferTasks();
+    try { this._disposeWatcher(); }
+    finally { this._disposeFileSystem(); }
   }
 
   private _resolveServiceConfig(
@@ -586,8 +597,8 @@ export default class FileService {
     this._watcherService.dispose(this.baseDir);
   }
 
-  // fixme: remote all profiles
   private _disposeFileSystem() {
-    return removeRemoteFs(getHostInfo(this.getConfig()));
+    for (const option of this._remoteOptions.values()) releaseRemoteFs(option);
+    this._remoteOptions.clear();
   }
 }

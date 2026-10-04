@@ -153,3 +153,14 @@ export function removeRemoteFs(option) {
     delete fsTable[identity];
   }
 }
+
+const owners = new Map<string, number>();
+export function retainRemoteFs(option) {
+  const id = hashOption(option);
+  owners.set(id, (owners.get(id) || 0) + 1);
+}
+export function releaseRemoteFs(option) {
+  const id = hashOption(option), count = owners.get(id) || 0;
+  if (count > 1) owners.set(id, count - 1);
+  else { owners.delete(id); removeRemoteFs(option); }
+}

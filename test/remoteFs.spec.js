@@ -39,3 +39,16 @@ test('late disconnect events from an old client do not close its replacement', a
   expect(await createRemoteIfNoneExist(options)).toBe(replacement);
   removeRemoteFs(options);
 });
+test('shared connections stay open until their last service releases them', async () => {
+  jest.spyOn(Client.prototype, 'connect').mockImplementation(function () { queueMicrotask(() => this.emit('ready')); return this; });
+  const end = jest.spyOn(Client.prototype, 'end').mockReturnThis();
+  jest.spyOn(Client.prototype, 'sftp').mockImplementation(cb => cb(null, {}));
+  const { retainRemoteFs, releaseRemoteFs } = require('../src/core/remoteFs');
+  const opts = { host: 'owned-test', port: 22, username: 'u', password: 'p', protocol: 'sftp', remoteTimeOffsetInHours: 0 };
+  retainRemoteFs(opts); retainRemoteFs(opts);
+  await createRemoteIfNoneExist(opts);
+  releaseRemoteFs(opts);
+  expect(end).not.toHaveBeenCalled();
+  releaseRemoteFs(opts);
+  expect(end).toHaveBeenCalledTimes(1);
+});
