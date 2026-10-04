@@ -2,10 +2,15 @@
 
 ## Unreleased
 
+## 2.1.0 - 2026-10-04
+
+First published release of the fork, available as a VSIX on the GitHub releases page. It includes everything listed under 2.0.0 to 2.0.2 below, which were never published separately.
+
 * Remote Explorer now compares each remote entry with its local counterpart: badges for modified, remote-only and ignored files, a count of differing items on folders, and size and age on every file.
 * Add Compare with Local and Check Whether Content Differs to Remote Explorer files. Clicking a file that differs opens a diff.
 * Add the `sftpXavi.mtimeToleranceSeconds` setting (default 5) so same-size files whose modified times differ only slightly, as uploads usually cause, are shown as identical.
 * Cache remote folder listings for 30 seconds, keep expanded folders open across refreshes, and fix deleting a top-level remote item not refreshing the tree when remotePath ends with a slash.
+* Fix `The "path" argument must be of type string` when listing the Remote Explorer root with no `context` setting.
 
 ## 2.0.2 - 2026-10-04
 
